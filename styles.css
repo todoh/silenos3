@@ -200,6 +200,7 @@ body {
     flex-direction: column;
     gap: 12px;
     flex-shrink: 0;
+    overflow: scroll;
 }
 
 .prog-draggable {

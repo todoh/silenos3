@@ -20,10 +20,18 @@ class ProgConnectionSystem {
                 path.setAttribute("stroke-width", "4");
                 path.setAttribute("fill", "none");
                 path.setAttribute("marker-end", `url(#arrow-${this.owner.windowId})`);
+                
+                // [FIX] Habilitar interacción del ratón en el path (el SVG padre tiene pointer-events: none)
+                path.style.pointerEvents = "visibleStroke";
+                path.style.cursor = "pointer";
+
+                // [FIX] Añadido stopPropagation para evitar conflicto con menú global
                 path.oncontextmenu = (e) => {
                     e.preventDefault();
+                    e.stopPropagation(); 
                     if(confirm("¿Eliminar conexión?")) this.owner.removeConnection(conn);
                 };
+                
                 this.svg.prepend(path);
             }
         });

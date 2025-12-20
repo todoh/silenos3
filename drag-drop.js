@@ -172,17 +172,44 @@ function handleIconDrop(e) {
     let destY = e.clientY;
     let isReorder = false; 
 
-    // [NUEVO] Detección de zona de DROP IA
+    // 1. Detección de zona de DROP IA
     const aiDropZone = targetEl ? targetEl.closest('.ai-drop-zone') : null;
     if (aiDropZone && typeof AIWorker !== 'undefined') {
         dragState.multiDragIds.forEach(id => AIWorker.addFileToContext(id));
-        // Animación visual feedback
         aiDropZone.style.borderColor = "#3b82f6";
         setTimeout(() => aiDropZone.style.borderColor = "rgba(0,0,0,0.1)", 300);
-        return; // Detenemos aquí, no movemos el archivo de lugar
+        return; 
     }
 
-    // 1. ¿Sobre una carpeta?
+    // 2. Detección de zona de DROP IMPORTACIÓN
+    const importDropZone = targetEl ? targetEl.closest('.import-drop-zone') : null;
+    if (importDropZone && typeof ImportManager !== 'undefined') {
+        const winId = importDropZone.id.replace('import-text-', '');
+        if (winId) ImportManager.handleInternalDrop(dragState.multiDragIds, importDropZone, winId);
+        return;
+    }
+
+    // 3. Detección de zona de DROP PROGRAMADOR (CANVAS)
+    const progCanvas = targetEl ? targetEl.closest('.prog-editor-container') : null;
+    if (progCanvas && typeof ProgrammerManager !== 'undefined') {
+        const winId = progCanvas.id.replace('prog-canvas-', '');
+        if (winId) ProgrammerManager.handleFileDrop(winId, dragState.multiDragIds, destX, destY);
+        return;
+    }
+
+    // 4. [NUEVO] Detección de zona de DROP RUNNER (Interfaz Ejecutable)
+    const runnerDrop = targetEl ? targetEl.closest('.runner-drop-zone') : null;
+    if (runnerDrop && typeof ProgrammerManager !== 'undefined') {
+         // Extraemos nodeId y fieldName del dataset
+         const nodeId = runnerDrop.dataset.node;
+         const fieldName = runnerDrop.dataset.field;
+         if (nodeId && fieldName) {
+             ProgrammerManager.handleRunnerFileDrop(nodeId, fieldName, dragState.multiDragIds);
+         }
+         return;
+    }
+
+    // 5. ¿Sobre una carpeta?
     const folderIcon = targetEl.closest('.folder-drop-zone');
     if (folderIcon) {
         const folderId = folderIcon.dataset.id;
@@ -191,7 +218,7 @@ function handleIconDrop(e) {
         }
     }
 
-    // 2. ¿Dentro de una ventana?
+    // 6. ¿Dentro de una ventana de carpeta?
     if (!destParentId) {
         const windowEl = targetEl.closest('.folder-window-content');
         if (windowEl) {
@@ -200,7 +227,7 @@ function handleIconDrop(e) {
         }
     }
 
-    // 3. Escritorio
+    // 7. Escritorio
     if (!destParentId) {
         if (!targetEl.closest('.window')) {
             destParentId = 'desktop';

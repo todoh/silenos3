@@ -202,3 +202,5 @@
     margin-top: 4px;
     outline: none;
 }
+/* Añadir al final de SILENOS 3/programmer-canvas.css */
+.prog-node[data-type="json-export"] .prog-node-header { border-top: 3px solid #16a34a; }

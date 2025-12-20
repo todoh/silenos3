@@ -1,5 +1,16 @@
 /* SILENOS 3/programmer-manager.js */
 
+// Helper para simular grafo en modo Headless
+class HeadlessGraph {
+    constructor(data, logCallback) {
+        this.nodes = data.nodes || [];
+        this.connections = data.connections || [];
+        this.logCallback = logCallback;
+    }
+    log(msg) { if (this.logCallback) this.logCallback(msg); }
+    extractNodeValues(node) { return node.values || {}; }
+}
+
 const ProgrammerManager = {
     instances: {}, 
     customModules: [], 
@@ -19,20 +30,16 @@ const ProgrammerManager = {
 
     saveModules() {
         localStorage.setItem('silenos_custom_modules', JSON.stringify(this.customModules));
-        // Recargar registros y UI
         this.registerCustomModules();
         Object.keys(this.instances).forEach(wid => this.refreshSidebar(wid));
     },
 
-    // Convierte la config JSON en definiciones ejecutables para NODE_REGISTRY
     registerCustomModules() {
         if (typeof NODE_REGISTRY === 'undefined') return;
 
         this.customModules.forEach(mod => {
             try {
-                // Crear función segura desde el string de código
-                // ctx está disponible dentro del código del usuario
-                const userFunc = new Function('ctx', `
+                const userFunc = new Function('ctx', 'inputs', `
                     try {
                         ${mod.code}
                     } catch(err) {
@@ -44,13 +51,21 @@ const ProgrammerManager = {
                 NODE_REGISTRY[mod.id] = {
                     title: mod.title,
                     color: mod.color || "#666",
-                    // Definimos entradas y salidas dinámicas para el Graph
                     inputs: mod.inputs || [],
                     outputs: mod.outputs || [],
                     fields: mod.fields || [],
                     isCustom: true,
                     execute: async (ctx) => {
-                        return await userFunc(ctx);
+                        if (!ctx.runtime.nodeStates) ctx.runtime.nodeStates = {};
+                        if (!ctx.runtime.nodeStates[ctx.nodeId]) ctx.runtime.nodeStates[ctx.nodeId] = [];
+                        
+                        const portIndex = (mod.inputs || []).indexOf(ctx.port);
+                        if (portIndex !== -1) {
+                            ctx.runtime.nodeStates[ctx.nodeId][portIndex] = ctx.input;
+                        }
+                        
+                        const inputs = ctx.runtime.nodeStates[ctx.nodeId];
+                        return await userFunc(ctx, inputs);
                     }
                 };
             } catch (e) {
@@ -80,7 +95,6 @@ const ProgrammerManager = {
                 .prog-world { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform-origin: 0 0; }
                 .prog-connections-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: visible; }
 
-                /* NODOS */
                 .prog-node {
                     position: absolute; width: 200px; background: #252526; border: 1px solid #454545;
                     border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; z-index: 10;
@@ -119,7 +133,6 @@ const ProgrammerManager = {
                     border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer;
                 }
                 
-                /* Modal Creador */
                 .prog-modal-bg { position:absolute; inset:0; background:rgba(0,0,0,0.8); z-index:200; display:flex; justify-content:center; align-items:center; }
                 .prog-modal { width: 600px; height: 500px; background: #252526; border: 1px solid #444; border-radius: 8px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 10px 30px #000; }
                 .prog-modal-head { padding: 10px; background: #333; font-weight:bold; color:#ddd; display:flex; justify-content:space-between; }
@@ -135,6 +148,176 @@ const ProgrammerManager = {
         this.initInterface(windowId, fileId);
     },
 
+    renderRunnerInWindow(windowId, fileId) {
+        const file = FileSystem.getItem(fileId);
+        const winContent = document.querySelector(`#window-${windowId} .content-area`);
+        if (!file || !winContent) return;
+
+        let dynamicFormHTML = '';
+        const nodes = file.content?.nodes || [];
+
+        nodes.forEach(node => {
+            const def = NODE_REGISTRY[node.type];
+            if (!def || !node.uiFlags) return;
+
+            const exposedFields = Object.entries(node.uiFlags).filter(([key, visible]) => visible);
+            
+            if (exposedFields.length > 0) {
+                dynamicFormHTML += `
+                    <div class="mb-4 bg-[#252526] p-3 rounded border border-[#333]">
+                        <div class="flex items-center gap-2 mb-2 border-b border-[#444] pb-1">
+                            <div class="w-3 h-3 rounded-full" style="background:${def.color || '#666'}"></div>
+                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">${node.values?.title || def.title}</span>
+                            <span class="text-[9px] text-gray-600 ml-auto">ID: ${node.id.split('-').pop()}</span>
+                        </div>
+                `;
+
+                exposedFields.forEach(([fieldName, _]) => {
+                    const currentVal = node.values[fieldName] || "";
+                    const fieldDef = (def.fields || []).find(f => f.name === fieldName);
+                    const inputType = fieldDef ? fieldDef.type : 'text';
+                    const label = fieldDef ? (fieldDef.placeholder || fieldName) : fieldName;
+
+                    dynamicFormHTML += `<div class="mb-2">
+                        <label class="text-[10px] text-gray-500 uppercase block mb-1">${label}</label>`;
+
+                    // RENDERIZADO SEGÚN TIPO
+                    if (inputType === 'file-drop') {
+                        // --- ZONA DE DROP VISUAL ---
+                        const fileInfo = currentVal ? FileSystem.getItem(currentVal) : null;
+                        const displayTitle = fileInfo ? fileInfo.title : (currentVal || "Arrastra un archivo aquí");
+                        const activeClass = currentVal ? 'border-green-500 text-green-400' : 'border-gray-600 text-gray-500';
+
+                        dynamicFormHTML += `
+                            <div class="runner-drop-zone p-4 border-2 border-dashed rounded flex flex-col items-center justify-center gap-2 transition-colors cursor-pointer hover:border-blue-500 hover:bg-[#333] ${activeClass}"
+                                 id="drop-${node.id}-${fieldName}" data-node="${node.id}" data-field="${fieldName}">
+                                 <i data-lucide="${fileInfo ? fileInfo.icon : 'upload'}" class="w-6 h-6"></i>
+                                 <span class="text-[10px] uppercase font-bold text-center file-label">${displayTitle}</span>
+                                 <input type="hidden" class="runner-input" data-node="${node.id}" data-field="${fieldName}" value="${currentVal}">
+                            </div>
+                        `;
+
+                    } else if (inputType === 'textarea') {
+                        dynamicFormHTML += `<textarea data-node="${node.id}" data-field="${fieldName}" 
+                            class="runner-input w-full bg-[#111] border border-[#444] text-white text-sm p-2 rounded outline-none focus:border-blue-500 h-20 resize-none">${currentVal}</textarea>`;
+                    } else if (inputType === 'select' && fieldDef) {
+                        const opts = fieldDef.options.map(o => `<option ${o===currentVal?'selected':''}>${o}</option>`).join('');
+                        dynamicFormHTML += `<select data-node="${node.id}" data-field="${fieldName}" 
+                            class="runner-input w-full bg-[#111] border border-[#444] text-white text-sm p-2 rounded outline-none focus:border-blue-500">${opts}</select>`;
+                    } else {
+                        dynamicFormHTML += `<input type="${inputType}" data-node="${node.id}" data-field="${fieldName}" value="${currentVal}"
+                            class="runner-input w-full bg-[#111] border border-[#444] text-white text-sm p-2 rounded outline-none focus:border-blue-500">`;
+                    }
+                    dynamicFormHTML += `</div>`;
+                });
+
+                dynamicFormHTML += `</div>`;
+            }
+        });
+
+        if (!dynamicFormHTML) {
+            dynamicFormHTML = `<div class="text-center text-gray-500 text-xs italic p-4">Este programa no tiene campos configurables visibles.</div>`;
+        }
+
+        winContent.innerHTML = `
+            <div class="flex flex-col h-full bg-[#1e1e1e] text-gray-300 font-sans">
+                <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                    ${dynamicFormHTML}
+                </div>
+                <div class="p-4 bg-[#252526] border-t border-[#333] flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-gray-500">Estado: <span id="runner-status-${windowId}" class="text-gray-300">Inactivo</span></span>
+                        <button onclick="ProgrammerManager.runHeadless('${windowId}', '${fileId}')" 
+                            class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded flex items-center gap-2 transition-transform active:scale-95 shadow-lg">
+                            <i data-lucide="play" class="w-4 h-4"></i> EJECUTAR
+                        </button>
+                    </div>
+                    <div class="h-32 bg-black rounded border border-[#333] flex flex-col">
+                         <div class="bg-[#333] px-2 py-1 text-[10px] font-bold text-gray-400 uppercase">Salida / Consola</div>
+                         <div id="runner-console-${windowId}" class="flex-1 p-2 font-mono text-xs overflow-y-auto text-green-400 custom-scrollbar"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+    },
+
+    // [NUEVO] Maneja el Drop en la Ventana de Ejecución (Runner)
+    handleRunnerFileDrop(nodeId, fieldName, fileIds) {
+        if (fileIds.length === 0) return;
+        const fileId = fileIds[0]; // Solo aceptamos 1 archivo por campo
+        const file = FileSystem.getItem(fileId);
+        if (!file) return;
+
+        // Buscar el elemento DOM del drop zone
+        const dropZone = document.getElementById(`drop-${nodeId}-${fieldName}`);
+        if (!dropZone) return;
+
+        // Actualizar visualmente
+        const label = dropZone.querySelector('.file-label');
+        const icon = dropZone.querySelector('i'); // Lucide icon (svg) or i tag
+        const input = dropZone.querySelector('input');
+
+        if (label) label.innerText = file.title;
+        if (input) input.value = fileId;
+        
+        // Cambiar estilos a "activo"
+        dropZone.classList.remove('border-gray-600', 'text-gray-500');
+        dropZone.classList.add('border-green-500', 'text-green-400');
+        
+        // Re-generar icono
+        if (icon) {
+             // Simple hack: replace innerHTML parent if needed, or re-run lucide
+             dropZone.innerHTML = `
+                 <i data-lucide="${file.icon}" class="w-6 h-6"></i>
+                 <span class="text-[10px] uppercase font-bold text-center file-label">${file.title}</span>
+                 <input type="hidden" class="runner-input" data-node="${nodeId}" data-field="${fieldName}" value="${fileId}">
+             `;
+             if(window.lucide) lucide.createIcons();
+        }
+    },
+
+    async runHeadless(windowId, fileId) {
+        const file = FileSystem.getItem(fileId);
+        if (!file || !file.content) return;
+
+        const consoleEl = document.getElementById(`runner-console-${windowId}`);
+        const statusEl = document.getElementById(`runner-status-${windowId}`);
+        
+        if (consoleEl) consoleEl.innerHTML = '';
+        if (statusEl) statusEl.innerText = "Ejecutando...";
+
+        const overrides = {};
+        const inputs = document.querySelectorAll(`#window-${windowId} .runner-input`);
+        
+        inputs.forEach(inp => {
+            const nodeId = inp.dataset.node;
+            const fieldName = inp.dataset.field;
+            if (!overrides[nodeId]) overrides[nodeId] = {};
+            overrides[nodeId][fieldName] = inp.value;
+        });
+
+        const logFn = (msg) => {
+            if (consoleEl) {
+                const line = document.createElement('div');
+                line.className = "border-b border-[#222] py-1 break-words";
+                if (msg.includes('❌')) line.style.color = '#ef4444';
+                else if (msg.includes('✅')) line.style.color = '#22c55e';
+                else if (msg.includes('▶')) line.style.color = '#3b82f6';
+                line.innerText = `> ${msg}`;
+                consoleEl.appendChild(line);
+                consoleEl.scrollTop = consoleEl.scrollHeight;
+            }
+        };
+
+        const headlessGraph = new HeadlessGraph(file.content, logFn);
+        const runtime = new ProgRuntime(headlessGraph);
+        await runtime.run(overrides); 
+
+        if (statusEl) statusEl.innerText = "Completado";
+    },
+
+    // ... (Resto de funciones: initInterface, refreshSidebar, etc. se mantienen igual) ...
     initInterface(windowId, fileId) {
         const winContent = document.querySelector(`#window-${windowId} .content-area`);
         if (!winContent) return;
@@ -146,7 +329,7 @@ const ProgrammerManager = {
                     <div id="prog-canvas-${windowId}" class="prog-editor-container"></div>
                     <div class="prog-toolbar">
                         <div id="prog-save-status-${windowId}" style="color:#666; font-size:0.7rem; padding-top:4px; opacity:0;">Guardado</div>
-                        <button class="prog-btn-float" onclick="ProgrammerManager.run('${windowId}')">▶ Ejecutar</button>
+                        <button class="prog-btn-float" onclick="ProgrammerManager.run('${windowId}')">▶ Ejecutar (Debug)</button>
                     </div>
                     <div id="prog-console-${windowId}" class="prog-console-overlay"><div>> Consola lista...</div></div>
                     <div id="prog-modal-container-${windowId}"></div>
@@ -186,7 +369,10 @@ const ProgrammerManager = {
         });
 
         sb.innerHTML = `
-            <button onclick="ProgrammerManager.openModuleCreator('${windowId}')" class="neumorph-btn" style="margin:10px; padding:8px; font-size:0.75rem; font-weight:bold; color:#007acc; cursor:pointer; text-align:center;">+ NUEVO MÓDULO</button>
+            <div style="display:flex; gap:5px; margin:10px;">
+                <button onclick="ProgrammerManager.openModuleCreator('${windowId}')" class="neumorph-btn" style="flex:1; padding:8px; font-size:0.65rem; font-weight:bold; color:#007acc; cursor:pointer; text-align:center;">+ CREAR</button>
+                <button onclick="ProgrammerManager.openModuleExporter('${windowId}')" class="neumorph-btn" style="flex:1; padding:8px; font-size:0.65rem; font-weight:bold; color:#e11d48; cursor:pointer; text-align:center;">⬇ EXP</button>
+            </div>
             
             <div style="padding: 10px; font-weight:bold; color:#555; font-size:0.65rem; text-transform:uppercase;">Nativos</div>
             <div class="prog-palette-item" draggable="true" data-type="log" style="border-left-color:#007acc">📝 Log</div>
@@ -195,8 +381,10 @@ const ProgrammerManager = {
             <div class="prog-palette-item" draggable="true" data-type="logic-gate" style="border-left-color:#f59e0b">⚖️ Compuerta</div>
             <div class="prog-palette-item" draggable="true" data-type="set-var" style="border-left-color:#06b6d4">💾 Set Var</div>
             <div class="prog-palette-item" draggable="true" data-type="get-var" style="border-left-color:#06b6d4">📂 Get Var</div>
+            <div class="prog-palette-item" draggable="true" data-type="read-file" style="border-left-color:#8b5cf6">📂 Leer Archivo</div>
             <div class="prog-palette-item" draggable="true" data-type="ai-query" style="border-left-color:#3b82f6">🧠 AI Query</div>
-            
+            <div class="prog-palette-item" draggable="true" data-type="book-export" style="border-left-color:#e11d48">📕 Export</div>
+            <div class="prog-palette-item" draggable="true" data-type="json-export" style="border-left-color:#16a34a">💾 Exportar JSON</div>
             <div style="padding: 10px; font-weight:bold; color:#555; font-size:0.65rem; text-transform:uppercase; margin-top:10px;">Mis Módulos</div>
             ${customHtml}
         `;
@@ -228,6 +416,32 @@ const ProgrammerManager = {
         });
     },
 
+    handleFileDrop(windowId, fileIds, x, y) {
+        const graph = this.instances[windowId];
+        if (!graph) return;
+
+        const rect = graph.container.getBoundingClientRect();
+        const graphX = (x - rect.left - graph.panX) / graph.scale;
+        const graphY = (y - rect.top - graph.panY) / graph.scale;
+
+        fileIds.forEach((fid, i) => {
+             const file = FileSystem.getItem(fid);
+             if (!file) return;
+             
+             const node = graph.addNode('read-file', graphX + (i * 20), graphY + (i * 20));
+             
+             // Asignamos el ID del archivo al input correspondiente
+             const inputId = node.element.querySelector('[name="fileId"]');
+             if (inputId) {
+                 inputId.value = fid;
+             }
+             const headerTitle = node.element.querySelector('.prog-node-header span');
+             if (headerTitle) headerTitle.innerText = `📂 ${file.title}`;
+        });
+        
+        graph.triggerChange();
+    },
+
     run(windowId) {
         const graph = this.instances[windowId];
         if (graph) graph.run();
@@ -242,13 +456,104 @@ const ProgrammerManager = {
             consoleEl.scrollTop = consoleEl.scrollHeight;
         }
     },
+    // ... (Resto de métodos como openModuleExporter, etc.) ...
+    openModuleExporter(windowId) {
+        const container = document.getElementById(`prog-modal-container-${windowId}`);
+        if (!container) return;
 
-    // --- CREADOR DE MÓDULOS ---
+        let listHtml = '';
+        if (this.customModules.length === 0) {
+            listHtml = '<div class="text-gray-500 text-xs text-center p-4">No hay módulos personalizados.</div>';
+        } else {
+            this.customModules.forEach(mod => {
+                listHtml += `
+                    <div class="flex items-center gap-2 p-2 bg-[#1e1e1e] rounded mb-1 border border-[#333]">
+                        <input type="checkbox" class="export-check cursor-pointer" value="${mod.id}" checked>
+                        <div class="w-3 h-3 rounded-full shadow-sm" style="background:${mod.color}"></div>
+                        <span class="text-xs text-gray-300 font-mono">${mod.title}</span>
+                    </div>
+                `;
+            });
+        }
+
+        container.innerHTML = `
+            <div class="prog-modal-bg">
+                <div class="prog-modal" style="height:450px;">
+                    <div class="prog-modal-head">
+                        <span>Gestionar Módulos</span>
+                        <button onclick="document.getElementById('prog-modal-container-${windowId}').innerHTML=''" style="color:#aaa;">×</button>
+                    </div>
+                    
+                    <div class="prog-modal-body flex flex-col gap-2">
+                        <div class="flex justify-between items-center mb-2 px-1">
+                             <span class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Selección</span>
+                             <button onclick="document.querySelectorAll('#prog-modal-container-${windowId} .export-check').forEach(c => c.checked = false)" class="text-[10px] text-blue-500 hover:underline">De Seleccionar Todos</button>
+                        </div>
+                        <div class="flex-1 overflow-y-auto custom-scrollbar bg-[#111] p-2 rounded border border-[#333]">
+                            ${listHtml}
+                        </div>
+                        <p class="text-[10px] text-gray-500 mt-2">
+                            Selecciona módulos para exportarlos a un archivo JSON o eliminarlos permanentemente.
+                        </p>
+                    </div>
+
+                    <div class="p-3 border-t border-[#444] flex justify-end gap-2 bg-[#252526]">
+                        <button onclick="ProgrammerManager.deleteSelectedModules('${windowId}')" class="px-4 py-2 bg-red-900 hover:bg-red-700 text-white rounded text-xs font-bold flex items-center gap-2 shadow-lg active:scale-95 transition-transform mr-auto">
+                            🗑 ELIMINAR
+                        </button>
+                        <button onclick="ProgrammerManager.executeExport('${windowId}')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-bold flex items-center gap-2 shadow-lg active:scale-95 transition-transform">
+                            ⬇ DESCARGAR JSON
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    deleteSelectedModules(windowId) {
+        const checks = document.querySelectorAll(`#prog-modal-container-${windowId} .export-check:checked`);
+        if (checks.length === 0) {
+            alert("Selecciona al menos un módulo para eliminar.");
+            return;
+        }
+
+        if (!confirm(`¿Estás seguro de eliminar ${checks.length} módulo(s)? Esta acción no se puede deshacer.`)) {
+            return;
+        }
+
+        const idsToDelete = Array.from(checks).map(c => c.value);
+        this.customModules = this.customModules.filter(m => !idsToDelete.includes(m.id));
+        this.saveModules();
+        this.openModuleExporter(windowId);
+    },
+
+    executeExport(windowId) {
+        const checks = document.querySelectorAll(`#prog-modal-container-${windowId} .export-check:checked`);
+        if (checks.length === 0) {
+            alert("Selecciona al menos un módulo.");
+            return;
+        }
+
+        const ids = Array.from(checks).map(c => c.value);
+        const modulesToExport = this.customModules
+            .filter(m => ids.includes(m.id))
+            .map(m => ({ ...m, type: 'custom-module' })); 
+
+        const blob = new Blob([JSON.stringify(modulesToExport, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `silenos_modules_export_${Date.now()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    },
 
     openModuleCreator(windowId) {
         const container = document.getElementById(`prog-modal-container-${windowId}`);
         if (!container) return;
-
+        
         container.innerHTML = `
             <div class="prog-modal-bg">
                 <div class="prog-modal">
@@ -355,12 +660,9 @@ const ProgrammerManager = {
         const color = document.getElementById('new-mod-color').value;
         const code = document.getElementById('new-mod-code').value;
 
-        // Recolectar Inputs
         const inputs = Array.from(document.querySelectorAll('#new-mod-inputs-list input')).map(i => i.value).filter(v=>v);
-        // Recolectar Outputs
         const outputs = Array.from(document.querySelectorAll('#new-mod-outputs-list input')).map(i => i.value).filter(v=>v);
         
-        // Recolectar Fields
         const fields = [];
         document.querySelectorAll('#new-mod-fields-list .prog-field-row').forEach(row => {
             const inputs = row.querySelectorAll('input, select');
@@ -369,21 +671,19 @@ const ProgrammerManager = {
             }
         });
 
-        // Crear objeto módulo
         const newMod = {
             id: 'custom-' + Date.now(),
             title,
             color,
-            inputs,   // Array de strings ['in1', 'trigger']
-            outputs,  // Array de strings ['out', 'error']
-            fields,   // Array de objetos {name, type}
-            code      // String JS
+            inputs,  
+            outputs, 
+            fields,  
+            code     
         };
 
         this.customModules.push(newMod);
         this.saveModules();
         
-        // Cerrar modal y refrescar
         document.getElementById(`prog-modal-container-${windowId}`).innerHTML = '';
         this.refreshSidebar(windowId);
     }

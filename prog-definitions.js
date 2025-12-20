@@ -70,7 +70,7 @@ const NODE_REGISTRY = {
             else if (op === 'XOR') trigger = (activeCount === 1);
             else if (op === 'NONE') trigger = (activeCount === 0);
 
-            if (!trigger) return null; // Detiene el flujo
+            if (!trigger) return null; 
             return ctx.input;
         }
     },
@@ -87,11 +87,82 @@ const NODE_REGISTRY = {
         fields: [{ name: "varName", type: "text", placeholder: "nombre" }],
         execute: async (ctx) => ctx.runtime.vars[ctx.fields.varName]
     },
+    "read-file": {
+        title: "📂 LEER ARCHIVO", color: "#8b5cf6", hasIn: true,
+        fields: [
+            { name: "fileId", type: "file-drop", placeholder: "Arrastra Archivo aquí" },
+            { name: "mode", type: "select", options: ["content", "title", "full_object"] }
+        ],
+        execute: async (ctx) => {
+            // Prioridad: Input del nodo > Override UI > Valor interno
+            const fid = ctx.input || ctx.fields.fileId;
+            
+            if (!fid) {
+                ctx.log("⚠️ No hay archivo seleccionado (Input o Drop)");
+                return null;
+            }
+            
+            const item = FileSystem.getItem(fid);
+            if (!item) {
+                ctx.log(`❌ Archivo no encontrado: ${fid}`);
+                return null;
+            }
+
+            ctx.log(`Leyendo: ${item.title}`);
+            const mode = ctx.fields.mode;
+
+            // --- LÓGICA DE CARPETA (Agrupación Narrativa) ---
+            if (item.type === 'folder') {
+                if (mode === 'title') return item.title;
+
+                const grouped = {};
+                
+                // Función recursiva para recorrer subcarpetas y extraer narrativas
+                const traverse = (folderId) => {
+                    const children = FileSystem.getItems(folderId);
+                    children.forEach(child => {
+                        if (child.type === 'folder') {
+                            traverse(child.id);
+                        } else if (child.type === 'narrative') {
+                            const rawTag = child.content.tag || "GENERAL";
+                            const tag = rawTag.toUpperCase().trim();
+                            
+                            if (!grouped[tag]) grouped[tag] = [];
+                            
+                            grouped[tag].push({
+                                title: child.title,
+                                content: child.content.text || ""
+                            });
+                        }
+                    });
+                };
+                
+                traverse(item.id);
+
+                // Ordenar alfabéticamente por etiqueta para el JSON final
+                const orderedResult = {};
+                Object.keys(grouped).sort().forEach(key => {
+                    orderedResult[key] = grouped[key];
+                });
+
+                // Devolvemos el objeto JSON directo (que el usuario puede convertir a string luego si quiere)
+                return orderedResult;
+            }
+            // --------------------------------------------------
+            
+            // Lógica para archivo individual
+            if (mode === 'title') return item.title;
+            if (mode === 'full_object') return item;
+            
+            if (typeof item.content === 'object') return JSON.stringify(item.content);
+            return item.content;
+        }
+    },
     "ai-query": {
         title: "🧠 CONSULTA IA", color: "#3b82f6",
         fields: [{ name: "query", type: "textarea", placeholder: "Pregunta..." }],
         execute: async (ctx) => {
-            const response = await AIService.callAI("Asistente SILENOS", `${ctx.fields.query} ${ctx.input || ""}`);
+            const response = await AIService.callAI("Asistente SILENOS", `${ctx.fields.query} ${JSON.stringify(ctx.input || "")}`);
             return response;
         }
     },
@@ -102,7 +173,7 @@ const NODE_REGISTRY = {
             const name = ctx.fields.name;
             if (ctx.port === 'add') {
                 ctx.runtime.buffers[name] = (ctx.runtime.buffers[name] || "") + ctx.input + "\n\n";
-                return null; // Detiene flujo
+                return null;
             } else if (ctx.port === 'release') {
                 return ctx.runtime.buffers[name];
             }
@@ -110,8 +181,10 @@ const NODE_REGISTRY = {
     },
     "book-export": {
         title: "📕 EXPORTAR LIBRO", color: "#e11d48", hasIn: false, hasOut: false,
-        execute: async (ctx) => {
-            // Lógica de FileSystem integrada en el runtime para manejar in-name, in-chapter, etc.
-        }
-    }
+        execute: async (ctx) => { }
+    },
+    "json-export": {
+        title: "💾 EXPORTAR JSON", color: "#16a34a", hasIn: false, hasOut: false,
+        execute: async (ctx) => { }
+    },
 };

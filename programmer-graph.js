@@ -76,7 +76,16 @@ class ProgrammerGraph {
                     <div class="flex items-center gap-1"><div class="prog-port prog-port-in" data-port="in-chapter"></div> CHAP</div>
                     <div class="flex items-center gap-1"><div class="prog-port prog-port-in" data-port="in-paragraph"></div> PARA</div>
                 </div>`;
-        } else if (type === 'logic-gate') {
+        } 
+         else if (type === 'json-export') {
+            portsHTML = `
+                <div class="p-1 text-[8px] text-gray-500 flex flex-col gap-1">
+                    <div class="flex items-center gap-1"><div class="prog-port prog-port-in" data-port="nombre"></div> NOMBRE</div>
+                    <div class="flex items-center gap-1"><div class="prog-port prog-port-in" data-port="contenido"></div> CONTENIDO</div>
+                </div>`; 
+        }
+        
+        else if (type === 'logic-gate') {
             portsHTML = `<div class="prog-ports"><div class="flex flex-col gap-2"><div class="prog-port prog-port-in" data-port="in1"></div><div class="prog-port prog-port-in" data-port="in2"></div></div><div class="prog-port prog-port-out" data-port="out"></div></div>`;
         } else if (def.customPorts) {
              portsHTML = `
@@ -115,9 +124,28 @@ class ProgrammerGraph {
     renderFields(fields) {
         if (!fields) return "";
         return fields.map(f => {
-            if (f.type === 'select') return `<select name="${f.name}">${f.options.map(o => `<option>${o}</option>`).join('')}</select>`;
-            if (f.type === 'textarea') return `<textarea name="${f.name}" placeholder="${f.placeholder}"></textarea>`;
-            return `<input type="${f.type}" name="${f.name}" value="${f.value || ''}" placeholder="${f.placeholder || f.name}">`;
+            let inputHtml = '';
+            if (f.type === 'select') {
+                inputHtml = `<select name="${f.name}">${f.options.map(o => `<option>${o}</option>`).join('')}</select>`;
+            } else if (f.type === 'textarea') {
+                inputHtml = `<textarea name="${f.name}" placeholder="${f.placeholder || f.name}"></textarea>`;
+            } else {
+                inputHtml = `<input type="${f.type}" name="${f.name}" value="${f.value || ''}" placeholder="${f.placeholder || f.name}">`;
+            }
+
+            // Wrapper con checkbox de "Mostrar en UI"
+            return `
+                <div class="mb-2 relative group">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[9px] text-gray-500 uppercase font-bold">${f.name}</span>
+                        <label class="flex items-center gap-1 cursor-pointer" title="Mostrar en Interfaz de Usuario">
+                            <input type="checkbox" class="prog-field-expose" data-name="${f.name}">
+                            <span class="text-[8px] text-gray-600 group-hover:text-blue-400">UI</span>
+                        </label>
+                    </div>
+                    ${inputHtml}
+                </div>
+            `;
         }).join('');
     }
 
@@ -147,6 +175,11 @@ class ProgrammerGraph {
         // Eventos de puertos (Detectar cualquier .prog-port)
         node.element.querySelectorAll('.prog-port').forEach(p => {
             p.onmousedown = (e) => this.startConnDrag(e, node, p.dataset.port);
+        });
+
+        // Eventos de inputs para trigger guardar
+        node.element.querySelectorAll('input, select, textarea').forEach(inp => {
+            inp.addEventListener('change', () => this.triggerChange());
         });
     }
 
@@ -233,8 +266,13 @@ class ProgrammerGraph {
     }
 
     load(data) {
+        // 1. Limpieza total
         this.nodes.forEach(n => n.element.remove());
         this.nodes = []; this.connections = [];
+        
+        // 2. Reset del contador para evitar estados sucios
+        this.nodeCounter = 0;
+
         if (!data || !data.nodes || data.nodes.length === 0) return this.addNode('start', 50, 50);
         
         this.ui.panX = data.panX || 0; 
@@ -243,13 +281,36 @@ class ProgrammerGraph {
         this.ui.updateTransform();
 
         data.nodes.forEach(n => {
+            // Creamos nodo (esto incrementa nodeCounter temporalmente)
             const newNode = this.addNode(n.type, n.x, n.y, false);
+            
+            // Forzamos el ID guardado
             newNode.id = n.id; 
             newNode.element.dataset.id = n.id;
+
+            // --- CORRECCIÓN CRÍTICA DE BUGS ---
+            // Analizamos el ID cargado para actualizar el contador global
+            // y evitar que los futuros nodos reutilicen este ID.
+            const parts = n.id.split('-');
+            const num = parseInt(parts[parts.length - 1]);
+            if (!isNaN(num) && num >= this.nodeCounter) {
+                this.nodeCounter = num + 1;
+            }
+            // ----------------------------------
+            
+            // 3. Restaurar Valores
             if (n.values) {
                 Object.entries(n.values).forEach(([key, val]) => {
                     const input = newNode.element.querySelector(`[name="${key}"]`);
                     if (input) input.value = val;
+                });
+            }
+
+            // 4. Restaurar Flags UI
+            if (n.uiFlags) {
+                Object.entries(n.uiFlags).forEach(([key, isExposed]) => {
+                    const checkbox = newNode.element.querySelector(`.prog-field-expose[data-name="${key}"]`);
+                    if (checkbox) checkbox.checked = isExposed;
                 });
             }
         });
@@ -261,7 +322,8 @@ class ProgrammerGraph {
         return {
             nodes: this.nodes.map(n => ({ 
                 id: n.id, type: n.type, x: n.x, y: n.y, 
-                values: this.extractNodeValues(n) 
+                values: this.extractNodeValues(n),
+                uiFlags: this.extractNodeUiFlags(n) // GUARDAR FLAGS
             })),
             connections: this.connections,
             panX: this.ui.panX, panY: this.ui.panY, scale: this.ui.scale
@@ -270,8 +332,17 @@ class ProgrammerGraph {
 
     extractNodeValues(node) {
         const vals = {};
-        node.element.querySelectorAll('input, select, textarea').forEach(i => vals[i.name] = i.value);
+        // Ignoramos los checkboxes en 'values' para no ensuciar el input del script
+        node.element.querySelectorAll('input:not([type="checkbox"]), select, textarea').forEach(i => vals[i.name] = i.value);
         return vals;
+    }
+
+    extractNodeUiFlags(node) {
+        const flags = {};
+        node.element.querySelectorAll('.prog-field-expose').forEach(cb => {
+            flags[cb.dataset.name] = cb.checked;
+        });
+        return flags;
     }
 
     run() { this.runtime.run(); }

@@ -44,7 +44,9 @@ function openDataWindow(fileId) {
     // --- REDIRECCIONES POR TIPO ---
     if (file.type === 'book') { openBookWindow(fileId); return; }
     if (file.type === 'narrative') { openNarrativeWindow(fileId); return; }
-    if (file.type === 'program') { openProgrammerWindow(fileId); return; } 
+    
+    // CAMBIO: Ahora abre el Runner, no el Editor
+    if (file.type === 'program') { openProgramRunnerWindow(fileId); return; }
 
     const existing = openWindows.find(w => w.id === fileId);
     if (existing) {
@@ -75,6 +77,43 @@ function openDataWindow(fileId) {
 
     if (typeof DataViewer !== 'undefined' && DataViewer.renderInWindow) {
         DataViewer.renderInWindow(fileId, fileId);
+    }
+}
+
+function openProgramRunnerWindow(fileId) {
+    const file = FileSystem.getItem(fileId);
+    if (!file) return;
+
+    const winId = 'runner-' + fileId;
+    const existing = openWindows.find(w => w.id === winId);
+    if (existing) {
+        if (existing.isMinimized) toggleMinimize(winId);
+        focusWindow(winId);
+        return;
+    }
+
+    zIndexCounter++;
+    const winObj = {
+        id: winId,
+        appId: 'program-runner',
+        type: 'program-runner', // Tipo distinto para estilos si quieres
+        fileId: fileId,
+        title: "" + file.title,
+        icon: 'play-circle',
+        zIndex: zIndexCounter,
+        isMinimized: false,
+        isMaximized: false,
+        x: window.innerWidth / 2 - 250,
+        y: window.innerHeight / 2 - 250
+    };
+
+    createWindowDOM(winObj, { width: 500, height: 500, color: 'text-green-600' });
+    openWindows.push(winObj);
+    renderDock();
+    if (window.lucide) lucide.createIcons();
+
+    if (typeof ProgrammerManager !== 'undefined') {
+        ProgrammerManager.renderRunnerInWindow(winId, fileId);
     }
 }
 
@@ -459,6 +498,10 @@ function createWindowDOM(winObj, config) {
         title = winObj.title;
         icon = winObj.icon;
         color = 'text-indigo-600';
+    } else if (winObj.type === 'program-runner') { // FIX: AÑADIDO PARA EJECUTAR PROGRAMAS
+        title = winObj.title;
+        icon = winObj.icon;
+        color = 'text-green-600';
     }
 
     const winEl = document.createElement('div');
