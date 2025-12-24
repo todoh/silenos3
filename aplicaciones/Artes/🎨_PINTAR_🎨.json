@@ -1,0 +1,76 @@
+{
+  "id": "program-paint-silen-v2",
+  "type": "executable",
+  "title": "🎨 PINTAR 🎨",
+  "parentId": "folder-1766530794088863",
+  "content": {
+    "nodes": [
+      {
+        "id": "node-start-paint",
+        "type": "start",
+        "x": 50,
+        "y": 50,
+        "inputs": [],
+        "outputs": [
+          "out"
+        ],
+        "values": {},
+        "uiFlags": {}
+      },
+      {
+        "id": "node-paint-engine",
+        "type": "paint-silen-v2",
+        "x": 350,
+        "y": 80,
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "export_done"
+        ],
+        "values": {
+          "titulo": "ESTUDIO DE MATERIALIZACIÓN"
+        },
+        "uiFlags": {
+          "titulo": false
+        }
+      }
+    ],
+    "connections": [
+      {
+        "fromNode": "node-start-paint",
+        "fromPort": "out",
+        "toNode": "node-paint-engine",
+        "toPort": "open"
+      }
+    ],
+    "panX": 0,
+    "panY": 0,
+    "scale": 1,
+    "embeddedModules": [
+      {
+        "id": "paint-silen-v2",
+        "title": "Paint Engine Pro (A-M)",
+        "color": "#db2777",
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "export_done"
+        ],
+        "fields": [
+          {
+            "name": "titulo",
+            "type": "text",
+            "value": "Silen Paint Pro"
+          }
+        ],
+        "code": "\nconst winId = 'silen-paint-pro-v2';\nconst existing = document.getElementById(winId);\nif (existing) { existing.remove(); return; }\n\n// --- CONFIGURACIÓN Y ESTADO (N-F) ---\nlet isDrawing = false;\nlet color = '#475569';\nlet size = 5;\nlet opacity = 1;\nlet isEraser = false;\nlet lastX = 0;\nlet lastY = 0;\n\n// --- INTERFAZ (D - CONTENEDOR) ---\nconst win = document.createElement('div');\nwin.id = winId;\nwin.style.cssText = `\n    position: absolute; top: 40px; left: 150px; width: 700px;\n    z-index: 9999; display: flex; flex-direction: column;\n    background: #e0e5ec; border-radius: 28px;\n    box-shadow: 12px 12px 24px #b8b9be, -12px -12px 24px #ffffff;\n    overflow: hidden; font-family: sans-serif; border: 1px solid rgba(255,255,255,0.4);\n`;\n\nconst header = document.createElement('div');\nheader.style.cssText = `\n    padding: 15px 20px; display: flex; justify-content: space-between;\n    align-items: center; cursor: grab; background: #e0e5ec;\n    border-bottom: 1px solid rgba(0,0,0,0.05);\n`;\nheader.innerHTML = `\n    <div style=\"display:flex; align-items:center; gap:10px;\">\n        <span style=\"font-weight:900; color:#475569; font-size:0.75rem; letter-spacing:1px;\">🎨 ${ctx.fields.titulo || 'PAINT PRO'}</span>\n    </div>\n    <button id=\"close-${winId}\" style=\"border:none; background:transparent; cursor:pointer; font-size:1.2rem; color:#888;\">×</button>\n`;\n\nconst toolbar = document.createElement('div');\ntoolbar.style.cssText = `\n    padding: 12px 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;\n    background: #e0e5ec; border-bottom: 1px solid rgba(0,0,0,0.05);\n`;\n\n// Selector de Color (M)\nconst colorPicker = document.createElement('input');\ncolorPicker.type = 'color'; colorPicker.value = color;\ncolorPicker.title = \"Materia (Color)\";\ncolorPicker.style.cssText = `border:none; width:35px; height:35px; cursor:pointer; background:none;`;\ncolorPicker.onchange = (e) => { color = e.target.value; isEraser = false; btnEraser.classList.remove('active-tool'); };\n\n// Selector de Tamaño (G - Granularidad)\nconst sizeContainer = document.createElement('div');\nsizeContainer.innerHTML = `<div style=\"font-size:9px; font-weight:bold; color:#888; margin-bottom:2px\">TAMAÑO</div>`;\nconst sizeSlider = document.createElement('input');\nsizeSlider.type = 'range'; sizeSlider.min = '1'; sizeSlider.max = '80'; sizeSlider.value = size;\nsizeSlider.style.cssText = `cursor:pointer; accent-color: #475569; width: 80px;`;\nsizeSlider.oninput = (e) => size = e.target.value;\nsizeContainer.appendChild(sizeSlider);\n\n// Selector de Opacidad (E - Equilibrio)\nconst opContainer = document.createElement('div');\nopContainer.innerHTML = `<div style=\"font-size:9px; font-weight:bold; color:#888; margin-bottom:2px\">OPACIDAD</div>`;\nconst opSlider = document.createElement('input');\nopSlider.type = 'range'; opSlider.min = '0.1'; opSlider.max = '1'; opSlider.step = '0.1'; opSlider.value = opacity;\nopSlider.style.cssText = `cursor:pointer; accent-color: #475569; width: 80px;`;\nopSlider.oninput = (e) => opacity = e.target.value;\nopContainer.appendChild(opSlider);\n\n// Botón Borrador (L - Límite)\nconst btnEraser = document.createElement('button');\nbtnEraser.innerText = \"BORRADOR\";\nconst btnStyle = `padding: 6px 12px; border: none; border-radius: 8px; background: #e0e5ec; box-shadow: 4px 4px 8px #b8b9be, -4px -4px 8px #ffffff; color: #475569; font-weight: bold; cursor: pointer; font-size: 0.6rem; transition: all 0.2s;`;\nbtnEraser.style.cssText = btnStyle;\nbtnEraser.onclick = () => {\n    isEraser = !isEraser;\n    btnEraser.style.boxShadow = isEraser ? 'inset 3px 3px 6px #b8b9be, inset -3px -3px 6px #ffffff' : '4px 4px 8px #b8b9be, -4px -4px 8px #ffffff';\n    btnEraser.style.color = isEraser ? '#2563eb' : '#475569';\n};\n\n// Botón Limpiar (Z - Conocimiento/Reinicio)\nconst btnClear = document.createElement('button');\nbtnClear.innerText = \"LIMPIAR TODO\";\nbtnClear.style.cssText = btnStyle;\nbtnClear.onclick = () => {\n    context.fillStyle = \"#ffffff\";\n    context.fillRect(0, 0, canvas.width, canvas.height);\n};\n\n// --- BOTONES DE MATERIALIZACIÓN (M) ---\nconst actionsContainer = document.createElement('div');\nactionsContainer.style.cssText = `margin-left: auto; display: flex; gap: 8px;`;\n\n// Botón Guardar en Escritorio (NUEVO)\nconst btnMaterialize = document.createElement('button');\nbtnMaterialize.innerText = \"ENVIAR A ESCRITORIO\";\nbtnMaterialize.style.cssText = btnStyle + `background: #4f46e5; color: #fff; box-shadow: 4px 4px 8px #b8b9be;`;\nbtnMaterialize.onclick = () => {\n    const dataUrl = canvas.toDataURL('image/png');\n    const name = `obra_silen_${Date.now()}.png`;\n    \n    if (typeof FileSystem !== 'undefined') {\n        FileSystem.createImage(name, dataUrl, 'desktop', 50, 50);\n        if (typeof refreshSystemViews === 'function') refreshSystemViews();\n        ctx.log(\"💎 Imagen materializada en el escritorio del sistema.\");\n        \n        btnMaterialize.innerText = \"¡GUARDADO!\";\n        setTimeout(() => btnMaterialize.innerText = \"ENVIAR A ESCRITORIO\", 2000);\n    } else {\n        ctx.log(\"❌ Error: Sistema de archivos no detectado.\");\n    }\n};\n\nactionsContainer.append(btnMaterialize);\ntoolbar.append(colorPicker, sizeContainer, opContainer, btnEraser, btnClear, actionsContainer);\n\nconst canvasContainer = document.createElement('div');\ncanvasContainer.style.cssText = `padding: 20px; display: flex; justify-content: center; background: #e0e5ec; flex: 1;`;\n\nconst canvas = document.createElement('canvas');\ncanvas.width = 640; canvas.height = 420;\ncanvas.style.cssText = `\n    background: #ffffff; border-radius: 20px;\n    box-shadow: inset 8px 8px 16px #b8b9be, inset -8px -8px 16px #ffffff;\n    cursor: crosshair; touch-action: none;\n`;\n\nconst context = canvas.getContext('2d');\ncontext.fillStyle = \"#ffffff\";\ncontext.fillRect(0, 0, canvas.width, canvas.height);\ncontext.lineCap = 'round';\ncontext.lineJoin = 'round';\n\n// --- LÓGICA DE ACCIÓN (A) ---\nconst startDrawing = (e) => {\n    isDrawing = true;\n    [lastX, lastY] = [e.offsetX, e.offsetY];\n};\n\nconst draw = (e) => {\n    if (!isDrawing) return;\n    \n    context.beginPath();\n    context.moveTo(lastX, lastY);\n    context.lineTo(e.offsetX, e.offsetY);\n    \n    // Configuración dinámica\n    context.globalAlpha = opacity;\n    context.strokeStyle = isEraser ? '#ffffff' : color;\n    context.lineWidth = size;\n    \n    context.stroke();\n    [lastX, lastY] = [e.offsetX, e.offsetY];\n};\n\nconst stopDrawing = () => isDrawing = false;\n\ncanvas.addEventListener('mousedown', startDrawing);\ncanvas.addEventListener('mousemove', draw);\ncanvas.addEventListener('mouseup', stopDrawing);\ncanvas.addEventListener('mouseout', stopDrawing);\n\ncanvasContainer.appendChild(canvas);\nwin.append(header, toolbar, canvasContainer);\ndocument.body.appendChild(win);\n\n// ARRASTRE DE VENTANA\nlet dragging = false, offset = {x:0, y:0};\nheader.onmousedown = (e) => {\n    if (e.target.id === `close-${winId}`) return;\n    dragging = true;\n    offset.x = e.clientX - win.offsetLeft;\n    offset.y = e.clientY - win.offsetTop;\n};\nwindow.addEventListener('mousemove', (e) => {\n    if (!dragging) return;\n    win.style.left = (e.clientX - offset.x) + 'px';\n    win.style.top = (e.clientY - offset.y) + 'px';\n});\nwindow.addEventListener('mouseup', () => dragging = false);\n\ndocument.getElementById(`close-${winId}`).onclick = () => win.remove();\n\nreturn \"Estudio de Materialización Silen Iniciado\";\n"
+      }
+    ]
+  },
+  "x": 0,
+  "y": 0,
+  "icon": "palette",
+  "color": "text-indigo-600"
+}
