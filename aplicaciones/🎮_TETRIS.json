@@ -1,0 +1,95 @@
+{
+  "id": "program-1766529935200738",
+  "type": "executable",
+  "title": "🎮 TETRIS",
+  "parentId": "desktop",
+  "content": {
+    "nodes": [
+      {
+        "id": "node-program-1766527108261366-0",
+        "type": "start",
+        "x": 100,
+        "y": -55,
+        "inputs": [],
+        "outputs": [
+          "out"
+        ],
+        "values": {},
+        "uiFlags": {}
+      },
+      {
+        "id": "node-program-1766527108261366-19",
+        "type": "tetris-silenos-v4-xl",
+        "x": 543,
+        "y": 29,
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "puntuacion"
+        ],
+        "values": {
+          "titulo": "Tetris"
+        },
+        "uiFlags": {
+          "titulo": false
+        }
+      }
+    ],
+    "connections": [
+      {
+        "fromNode": "node-program-1766527108261366-0",
+        "fromPort": "out",
+        "toNode": "node-program-1766527108261366-19",
+        "toPort": "open"
+      }
+    ],
+    "panX": 0,
+    "panY": 0,
+    "scale": 1,
+    "embeddedModules": [
+      {
+        "id": "tetris-silenos-v4-xl",
+        "title": "Tetris Pro XL",
+        "color": "#8b5cf6",
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "puntuacion"
+        ],
+        "fields": [
+          {
+            "name": "titulo",
+            "type": "text",
+            "value": "Tetris Pro XL"
+          }
+        ],
+        "code": "const winId = 'tetris-v4-win'; const existing = document.getElementById(winId); if (existing) { existing.remove(); return; } if (ctx.port !== 'open') return; return new Promise((resolve) => { const COLS = 10; const ROWS = 20; const BLOCK_SIZE = 28; let score = 0; let level = 1; let gameActive = false; let loop = null; let dropCounter = 0; let dropInterval = 1000; let lastTime = 0; let board = Array.from({length: ROWS}, () => Array(COLS).fill(0)); const PIECES = { 'I': [[0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0]], 'L': [[0, 2, 0], [0, 2, 0], [0, 2, 2]], 'J': [[0, 3, 0], [0, 3, 0], [3, 3, 0]], 'O': [[4, 4], [4, 4]], 'Z': [[5, 5, 0], [0, 5, 5]], 'S': [[0, 6, 6], [6, 6, 0]], 'T': [[0, 7, 0], [7, 7, 7]] }; const COLORS = [null, '#4dd0e1', '#4fc3f7', '#ffb74d', '#fff176', '#81c784', '#ba68c8', '#e57373']; let player = { pos: {x: 0, y: 0}, matrix: null }; const win = document.createElement('div'); win.id = winId; win.style.cssText = 'position: absolute; top: 40px; left: 150px; width: 360px; z-index: 10000; display: flex; flex-direction: column; background: #e0e5ec; border-radius: 32px; box-shadow: 10px 10px 25px rgba(0,0,0,0.08); user-select: none; overflow: hidden; font-family: sans-serif;'; const header = document.createElement('div'); header.style.cssText = 'padding: 18px; display: flex; justify-content: space-between; align-items: center; cursor: grab; border-bottom: 1px solid rgba(0,0,0,0.05);'; header.innerHTML = '<span style=\"font-weight:900; color:#8b5cf6; font-size:0.8rem; letter-spacing:1px;\">🧱 ' + (ctx.fields.titulo || 'TETRIS XL') + '</span><button id=\"close-' + winId + '\" style=\"border:none; background:transparent; cursor:pointer; font-size:1.4rem; color:#888;\">×</button>'; const body = document.createElement('div'); body.style.cssText = 'padding: 20px; display: flex; flex-direction: column; gap: 15px; align-items: center;'; const stats = document.createElement('div'); stats.style.cssText = 'display: flex; justify-content: space-between; width: 100%; font-size: 0.7rem; font-weight: 800; color: #718096;'; stats.innerHTML = '<span id=\"tr-score\">SCORE: 0</span><span id=\"tr-level\">LVL: 1</span>'; const canvas = document.createElement('canvas'); canvas.width = COLS * BLOCK_SIZE; canvas.height = ROWS * BLOCK_SIZE; canvas.style.cssText = 'background: #d1d9e6; border-radius: 16px; box-shadow: inset 6px 6px 12px rgba(0,0,0,0.06);'; const g = canvas.getContext('2d'); const btnStart = document.createElement('button'); btnStart.innerText = 'START GAME'; btnStart.style.cssText = 'width: 100%; padding: 14px; border: none; border-radius: 18px; background: #e0e5ec; color: #8b5cf6; font-weight: 900; cursor: pointer; box-shadow: 6px 6px 12px rgba(0,0,0,0.08);'; function rotate(matrix) { const r = matrix[0].map((_, i) => matrix.map(row => row[i])); return r.map(row => row.reverse()); } function playerRotate() { const pos = player.pos.x; let offset = 1; const old = player.matrix; player.matrix = rotate(player.matrix); while (collide(board, player)) { player.pos.x += offset; offset = -(offset + (offset > 0 ? 1 : -1)); if (offset > player.matrix[0].length) { player.matrix = old; player.pos.x = pos; return; } } } function collide(b, p) { for (let y = 0; y < p.matrix.length; ++y) { for (let x = 0; x < p.matrix[y].length; ++x) { if (p.matrix[y][x] !== 0 && (b[y + p.pos.y] && b[y + p.pos.y][x + p.pos.x]) !== 0) return true; } } return false; } function arenaSweep() { let rowCount = 1; outer: for (let y = ROWS - 1; y > 0; --y) { for (let x = 0; x < COLS; ++x) { if (board[y][x] === 0) continue outer; } const row = board.splice(y, 1)[0].fill(0); board.unshift(row); ++y; score += rowCount * 10; rowCount *= 2; if (score >= level * 100) { level++; dropInterval = Math.max(100, dropInterval - 100); } } updateStats(); } function playerReset() { const keys = Object.keys(PIECES); const shape = keys[Math.floor(Math.random() * keys.length)]; player.matrix = JSON.parse(JSON.stringify(PIECES[shape])); player.pos.y = 0; player.pos.x = Math.floor(COLS / 2) - Math.floor(player.matrix[0].length / 2); if (collide(board, player)) { gameActive = false; btnStart.style.display = 'block'; btnStart.innerText = 'RETRY'; } } function draw() { g.clearRect(0, 0, canvas.width, canvas.height); board.forEach((row, y) => { row.forEach((v, x) => { if (v !== 0) { g.fillStyle = COLORS[v]; g.fillRect(x * BLOCK_SIZE + 1, y * BLOCK_SIZE + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2); } }); }); player.matrix.forEach((row, y) => { row.forEach((v, x) => { if (v !== 0) { g.fillStyle = COLORS[v]; g.fillRect((x + player.pos.x) * BLOCK_SIZE + 1, (y + player.pos.y) * BLOCK_SIZE + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2); } }); }); } function updateStats() { document.getElementById('tr-score').innerText = 'SCORE: ' + score; document.getElementById('tr-level').innerText = 'LVL: ' + level; } function animate(time = 0) { if (!gameActive) return; const dt = time - lastTime; lastTime = time; dropCounter += dt; if (dropCounter > dropInterval) { player.pos.y++; if (collide(board, player)) { player.pos.y--; player.matrix.forEach((row, y) => { row.forEach((v, x) => { if (v !== 0) board[y + player.pos.y][x + player.pos.x] = v; }); }); playerReset(); arenaSweep(); } dropCounter = 0; } draw(); loop = requestAnimationFrame(animate); } window.onkeydown = (e) => { if (!gameActive) return; if (e.key === 'ArrowLeft') { player.pos.x--; if (collide(board, player)) player.pos.x++; } if (e.key === 'ArrowRight') { player.pos.x++; if (collide(board, player)) player.pos.x--; } if (e.key === 'ArrowDown') { player.pos.y++; if (collide(board, player)) player.pos.y--; dropCounter = 0; } if (e.key === 'ArrowUp') playerRotate(); }; btnStart.onclick = () => { board.forEach(row => row.fill(0)); score = 0; level = 1; dropInterval = 1000; playerReset(); gameActive = true; btnStart.style.display = 'none'; lastTime = performance.now(); animate(); }; body.append(stats, canvas, btnStart); win.append(header, body); document.body.appendChild(win); let drag = false, off = {x:0, y:0}; header.onmousedown = (e) => { drag = true; off.x = e.clientX - win.offsetLeft; off.y = e.clientY - win.offsetTop; win.style.zIndex = 10001; }; window.addEventListener('mousemove', (e) => { if (!drag) return; win.style.left = (e.clientX - off.x) + 'px'; win.style.top = (e.clientY - off.y) + 'px'; }); window.addEventListener('mouseup', () => drag = false); document.getElementById('close-' + winId).onclick = () => { gameActive = false; cancelAnimationFrame(loop); win.remove(); resolve(score); }; draw(); });",
+        "_isExternal": false
+      },
+      {
+        "id": "custom-self-exporter-exec-v22",
+        "title": "Crear Ejecutable v2.2 (Autoportable)",
+        "color": "#ef4444",
+        "inputs": [
+          "exec"
+        ],
+        "outputs": [],
+        "fields": [
+          {
+            "name": "filename",
+            "type": "text",
+            "placeholder": "NombreApp"
+          }
+        ],
+        "code": "\n// --- CREAR EJECUTABLE V2.2 (AUTOPORTABLE) ---\nconst name = ctx.fields.filename || \"App_\" + Date.now();\nctx.log(`⚡ Procesando ejecutable autoportable: ${name}...`);\n\ntry {\n    // 1. Serializar el grafo actual\n    const fullData = ctx.graph.serialize();\n\n    // 2. EXTRAER DEFINICIONES DE MÓDULOS USADOS (La \"Portabilidad\")\n    // Identificamos qué tipos de nodos hay en el grafo\n    const usedTypes = new Set(fullData.nodes.map(n => n.type));\n    \n    // Filtramos los módulos personalizados que existen en el sistema y que están en el grafo\n    const embeddedModules = ProgrammerManager.customModules.filter(m => usedTypes.has(m.id));\n    \n    if (embeddedModules.length > 0) {\n        ctx.log(`📦 Embebiendo ${embeddedModules.length} módulos personalizados...`);\n    }\n\n    // 3. CIRUGÍA: Extirpar este mismo nodo exportador para evitar bucles\n    const cleanNodes = fullData.nodes.filter(n => n.id !== ctx.nodeId);\n    const cleanConns = fullData.connections.filter(c => \n        c.fromNode !== ctx.nodeId && c.toNode !== ctx.nodeId\n    );\n\n    // 4. Reconstruir el objeto con las definiciones embebidas\n    const finalContent = {\n        ...fullData,\n        nodes: cleanNodes,\n        connections: cleanConns,\n        embeddedModules: embeddedModules, // <-- AQUÍ VA LA MAGIA\n        panX: 0, panY: 0, scale: 1\n    };\n\n    // 5. Crear el archivo en el Sistema\n    if (typeof FileSystem !== 'undefined') {\n        const newProg = FileSystem.createProgram(name, 'desktop');\n        \n        newProg.type = 'executable'; \n        newProg.icon = 'zap'; \n        newProg.color = 'text-yellow-500';\n        newProg.content = finalContent;\n        \n        FileSystem.save();\n        if (typeof refreshSystemViews === 'function') refreshSystemViews();\n        \n        ctx.log(`✅ ¡Éxito! \"${name}\" es ahora autoportable.`);\n    } else {\n        ctx.log(\"❌ Error: No se encuentra el Sistema de Archivos.\");\n    }\n} catch (e) {\n    ctx.log(\"❌ Error: \" + e.message);\n}\n",
+        "_isExternal": false
+      }
+    ]
+  },
+  "x": 1101,
+  "y": 426,
+  "icon": "zap",
+  "color": "text-yellow-500"
+}
