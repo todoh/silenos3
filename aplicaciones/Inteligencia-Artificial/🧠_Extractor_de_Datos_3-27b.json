@@ -1,0 +1,320 @@
+{
+  "id": "program-1766531446557962",
+  "type": "executable",
+  "title": "🧠 Extractor de Datos 3-27b",
+  "parentId": "folder-1766530794088863",
+  "content": {
+    "nodes": [
+      {
+        "id": "node-program-1766524249764373-0",
+        "type": "start",
+        "x": -127,
+        "y": 50,
+        "inputs": [],
+        "outputs": [
+          "out"
+        ],
+        "values": {},
+        "uiFlags": {}
+      },
+      {
+        "id": "node-program-1766524249764373-1",
+        "type": "custom-dynamic-form-ui",
+        "x": 158,
+        "y": -75,
+        "inputs": [
+          "open",
+          "etiqueta",
+          "profundidad",
+          "texto"
+        ],
+        "outputs": [
+          "data",
+          "etiqueta",
+          "profundidad",
+          "texto"
+        ],
+        "values": {
+          "title": "Ingresar texto para extraer los Datos"
+        },
+        "uiFlags": {
+          "title": false
+        }
+      },
+      {
+        "id": "node-program-1766524249764373-3",
+        "type": "custom-ai-narrative-auto-aggregator-v2",
+        "x": 875.9999999999999,
+        "y": -40.66666666666665,
+        "inputs": [
+          "Dato IA",
+          "Cantidad",
+          "Etiqueta"
+        ],
+        "outputs": [
+          "fin"
+        ],
+        "values": {
+          "PREFIJO": "",
+          "MODELO": "gemini-2.0-flash",
+          "PROMPT_PLAN": "",
+          "PROMPT_EXEC": ""
+        },
+        "uiFlags": {
+          "PREFIJO": false,
+          "MODELO": false,
+          "PROMPT_PLAN": false,
+          "PROMPT_EXEC": false
+        }
+      },
+      {
+        "id": "node-program-1766524249764373-4",
+        "type": "custom-ai-narrative-auto-aggregator-v2",
+        "x": 669.6666666666665,
+        "y": 114,
+        "inputs": [
+          "Dato IA",
+          "Cantidad",
+          "Etiqueta"
+        ],
+        "outputs": [
+          "fin"
+        ],
+        "values": {
+          "PREFIJO": "",
+          "MODELO": "gemini-2.0-flash",
+          "PROMPT_PLAN": "",
+          "PROMPT_EXEC": ""
+        },
+        "uiFlags": {
+          "PREFIJO": false,
+          "MODELO": false,
+          "PROMPT_PLAN": false,
+          "PROMPT_EXEC": false
+        }
+      },
+      {
+        "id": "node-program-1766524249764373-5",
+        "type": "custom-ai-narrative-auto-aggregator-v2",
+        "x": 1080.166666666666,
+        "y": -203.5833333333333,
+        "inputs": [
+          "Dato IA",
+          "Cantidad",
+          "Etiqueta"
+        ],
+        "outputs": [
+          "fin"
+        ],
+        "values": {
+          "PREFIJO": "",
+          "MODELO": "gemini-2.0-flash",
+          "PROMPT_PLAN": "",
+          "PROMPT_EXEC": ""
+        },
+        "uiFlags": {
+          "PREFIJO": false,
+          "MODELO": false,
+          "PROMPT_PLAN": false,
+          "PROMPT_EXEC": false
+        }
+      },
+      {
+        "id": "node-program-1766524249764373-9",
+        "type": "custom-ai-narrative-auto-aggregator-v2",
+        "x": 462.777777777778,
+        "y": 257.77777777777806,
+        "inputs": [
+          "Dato IA",
+          "Cantidad",
+          "Etiqueta"
+        ],
+        "outputs": [
+          "fin"
+        ],
+        "values": {
+          "PREFIJO": "",
+          "MODELO": "gemini-2.0-flash",
+          "PROMPT_PLAN": "",
+          "PROMPT_EXEC": ""
+        },
+        "uiFlags": {
+          "PREFIJO": false,
+          "MODELO": false,
+          "PROMPT_PLAN": false,
+          "PROMPT_EXEC": false
+        }
+      }
+    ],
+    "connections": [
+      {
+        "fromNode": "node-program-1766524249764373-0",
+        "fromPort": "out",
+        "toNode": "node-program-1766524249764373-1",
+        "toPort": "open"
+      },
+      {
+        "fromNode": "node-program-1766524249764373-1",
+        "fromPort": "etiqueta",
+        "toNode": "node-program-1766524249764373-3",
+        "toPort": "Etiqueta"
+      },
+      {
+        "fromNode": "node-program-1766524249764373-1",
+        "fromPort": "texto",
+        "toNode": "node-program-1766524249764373-3",
+        "toPort": "Dato IA"
+      },
+      {
+        "fromNode": "node-program-1766524249764373-1",
+        "fromPort": "profundidad",
+        "toNode": "node-program-1766524249764373-3",
+        "toPort": "Cantidad"
+      },
+      {
+        "fromNode": "node-program-1766524249764373-1",
+        "fromPort": "etiqueta",
+        "toNode": "node-program-1766524249764373-4",
+        "toPort": "Etiqueta"
+      },
+      {
+        "fromNode": "node-program-1766524249764373-1",
+        "fromPort": "profundidad",
+        "toNode": "node-program-1766524249764373-4",
+        "toPort": "Cantidad"
+      },
+      {
+        "fromNode": "node-program-1766524249764373-1",
+        "fromPort": "texto",
+        "toNode": "node-program-1766524249764373-4",
+        "toPort": "Dato IA"
+      },
+      {
+        "fromNode": "node-program-1766524249764373-1",
+        "fromPort": "texto",
+        "toNode": "node-program-1766524249764373-5",
+        "toPort": "Dato IA"
+      },
+      {
+        "fromNode": "node-program-1766524249764373-1",
+        "fromPort": "profundidad",
+        "toNode": "node-program-1766524249764373-5",
+        "toPort": "Cantidad"
+      },
+      {
+        "fromNode": "node-program-1766524249764373-1",
+        "fromPort": "etiqueta",
+        "toNode": "node-program-1766524249764373-5",
+        "toPort": "Etiqueta"
+      },
+      {
+        "fromNode": "node-program-1766524249764373-1",
+        "fromPort": "etiqueta",
+        "toNode": "node-program-1766524249764373-9",
+        "toPort": "Etiqueta"
+      },
+      {
+        "fromNode": "node-program-1766524249764373-1",
+        "fromPort": "texto",
+        "toNode": "node-program-1766524249764373-9",
+        "toPort": "Dato IA"
+      },
+      {
+        "fromNode": "node-program-1766524249764373-1",
+        "fromPort": "profundidad",
+        "toNode": "node-program-1766524249764373-9",
+        "toPort": "Cantidad"
+      }
+    ],
+    "panX": 0,
+    "panY": 0,
+    "scale": 1,
+    "embeddedModules": [
+      {
+        "id": "custom-dynamic-form-ui",
+        "title": "Formulario UI Dinámico",
+        "color": "#db2777",
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "data"
+        ],
+        "fields": [
+          {
+            "name": "title",
+            "type": "text",
+            "value": "Ingresar Datos"
+          }
+        ],
+        "isDynamic": true,
+        "code": "\n// --- FORMULARIO DINÁMICO (SOLO ABRE CON 'OPEN') ---\n\n// 1. [CORRECCIÓN] Si la señal no viene por 'open', detenemos la ejecución.\n// Los datos de otros puertos ya se han guardado automáticamente en memoria.\nif (ctx.port !== 'open') return null;\n\n// 2. Detectar puertos definidos en el grafo\nconst nodeDef = ctx.graph.nodes.find(n => n.id === ctx.nodeId);\nconst formFields = nodeDef.inputs.filter(p => p !== 'open');\n\nif (formFields.length === 0) {\n    alert(\"Usa el botón '+ In' en el nodo para añadir los campos.\");\n    return null;\n}\n\nconst formTitle = ctx.fields.title || \"Formulario\";\nconst inputValues = inputs || [];\n\nctx.log(`🖥️ Abriendo formulario '${formTitle}'...`);\n\nreturn new Promise((resolve) => {\n    const winId = 'dyn-form-' + Date.now();\n    \n    // --- CREACIÓN DE VENTANA ---\n    const win = document.createElement('div');\n    win.id = winId;\n    win.className = 'window neumorph-out pop-in pointer-events-auto';\n    win.style.cssText = `\n        position: absolute;\n        top: 150px;\n        left: 150px;\n        width: 350px;\n        height: auto;\n        max-height: 80vh;\n        z-index: 9999;\n        display: flex;\n        flex-direction: column;\n        background: #e0e5ec;\n        border-radius: 20px;\n        overflow: hidden;\n        box-shadow: 10px 10px 30px rgba(0,0,0,0.2);\n        pointer-events: auto !important;\n    `;\n\n    // HEADER\n    const header = document.createElement('div');\n    header.className = 'window-header';\n    header.style.cssText = `\n        padding: 12px 15px;\n        display: flex;\n        justify-content: space-between;\n        align-items: center;\n        background: #e0e5ec;\n        cursor: grab;\n        border-bottom: 1px solid rgba(255,255,255,0.5);\n        user-select: none;\n    `;\n    header.innerHTML = `\n        <div style=\"display:flex; gap:8px; align-items:center;\">\n            <span style=\"font-weight:bold; color:#db2777; font-size:0.9rem;\">📝 ${formTitle}</span>\n        </div>\n        <button id=\"close-${winId}\" style=\"border:none; background:transparent; cursor:pointer; font-size:1.2rem; color:#666;\">×</button>\n    `;\n\n    // BODY\n    const body = document.createElement('div');\n    body.style.cssText = `\n        padding: 20px;\n        background: #e0e5ec;\n        display: flex;\n        flex-direction: column;\n        gap: 15px;\n        overflow-y: auto;\n    `;\n\n    // --- CAMPOS ---\n    formFields.forEach(fieldName => {\n        const portIndex = nodeDef.inputs.indexOf(fieldName);\n        // Aquí recuperamos el valor que se guardó silenciosamente antes\n        const defaultVal = (inputValues[portIndex] !== undefined && inputValues[portIndex] !== null) ? inputValues[portIndex] : \"\";\n\n        const wrapper = document.createElement('div');\n        \n        const lbl = document.createElement('label');\n        lbl.innerText = fieldName;\n        lbl.style.cssText = 'display:block; font-size:0.7rem; font-weight:bold; color:#666; text-transform:uppercase; margin-bottom:5px; margin-left:2px;';\n        \n        const input = document.createElement('input');\n        input.type = 'text'; \n        input.id = `input-${winId}-${fieldName}`;\n        input.value = defaultVal;\n        input.onmousedown = (e) => e.stopPropagation();\n        input.style.cssText = 'width:100%; background:#e0e5ec; box-shadow:inset 3px 3px 6px #b8b9be, inset -3px -3px 6px #ffffff; border:none; padding:10px 12px; border-radius:12px; font-size:0.9rem; color:#333; outline:none; font-family:inherit; transition: all 0.2s;';\n        \n        input.onfocus = () => input.style.boxShadow = 'inset 4px 4px 8px #b8b9be, inset -4px -4px 8px #ffffff';\n        input.onblur = () => input.style.boxShadow = 'inset 3px 3px 6px #b8b9be, inset -3px -3px 6px #ffffff';\n\n        wrapper.appendChild(lbl);\n        wrapper.appendChild(input);\n        body.appendChild(wrapper);\n    });\n\n    // FOOTER\n    const footer = document.createElement('div');\n    footer.style.padding = \"0 20px 20px 20px\";\n\n    const btn = document.createElement('button');\n    btn.innerText = \"ACEPTAR\";\n    btn.style.cssText = `\n        width: 100%;\n        padding: 12px;\n        background: #db2777;\n        border: none;\n        border-radius: 12px;\n        box-shadow: 5px 5px 10px #b8b9be, -5px -5px 10px #ffffff;\n        font-weight: bold;\n        color: white;\n        cursor: pointer;\n        transition: transform 0.1s;\n    `;\n    \n    btn.onmousedown = (e) => { e.stopPropagation(); btn.style.transform = 'scale(0.96)'; };\n    btn.onmouseup = () => btn.style.transform = 'scale(1)';\n\n    btn.onclick = (e) => {\n        e.stopPropagation();\n        const result = {};\n        formFields.forEach(fieldName => {\n            const el = document.getElementById(`input-${winId}-${fieldName}`);\n            if(el) result[fieldName] = el.value;\n        });\n\n        win.remove();\n        window.removeEventListener('mousemove', onMouseMove);\n        window.removeEventListener('mouseup', onMouseUp);\n        \n        ctx.log(\"✅ Datos enviados.\");\n        resolve(result);\n    };\n\n    footer.appendChild(btn);\n    win.appendChild(header);\n    win.appendChild(body);\n    win.appendChild(footer);\n\n    const container = document.getElementById('windows-container') || document.body;\n    container.appendChild(win);\n\n    // --- DRAG & DROP ---\n    let isDragging = false, startX, startY, initLeft, initTop;\n    \n    header.onmousedown = (e) => {\n        if(e.button !== 0) return;\n        isDragging = true;\n        startX = e.clientX;\n        startY = e.clientY;\n        initLeft = win.offsetLeft;\n        initTop = win.offsetTop;\n        win.style.zIndex = 99999;\n        header.style.cursor = 'grabbing';\n        e.preventDefault();\n    };\n\n    const onMouseMove = (e) => {\n        if (!isDragging) return;\n        e.preventDefault();\n        const dx = e.clientX - startX;\n        const dy = e.clientY - startY;\n        win.style.left = (initLeft + dx) + 'px';\n        win.style.top = (initTop + dy) + 'px';\n    };\n\n    const onMouseUp = () => {\n        isDragging = false;\n        header.style.cursor = 'grab';\n    };\n\n    window.addEventListener('mousemove', onMouseMove);\n    window.addEventListener('mouseup', onMouseUp);\n\n    document.getElementById(`close-${winId}`).onclick = (e) => {\n        e.stopPropagation();\n        win.remove();\n        window.removeEventListener('mousemove', onMouseMove);\n        window.removeEventListener('mouseup', onMouseUp);\n        ctx.log(\"❌ Cancelado.\");\n        resolve(null);\n    };\n});\n",
+        "type": "custom-module",
+        "_isExternal": true
+      },
+      {
+        "id": "custom-ai-narrative-auto-aggregator-v2",
+        "title": "IA Agregador Auto-Nombre",
+        "color": "#7c3aed",
+        "inputs": [
+          "Dato IA",
+          "Cantidad",
+          "Etiqueta"
+        ],
+        "outputs": [
+          "fin"
+        ],
+        "fields": [
+          {
+            "name": "PREFIJO",
+            "type": "text",
+            "value": "",
+            "placeholder": "Ej: ANALISIS_"
+          },
+          {
+            "name": "MODELO",
+            "type": "text",
+            "value": "gemini-2.0-flash",
+            "placeholder": "Ej: gemini-2.0-flash"
+          },
+          {
+            "name": "PROMPT_PLAN",
+            "type": "textarea",
+            "value": "",
+            "placeholder": "Fase 1: Instrucciones para generar la lista..."
+          },
+          {
+            "name": "PROMPT_EXEC",
+            "type": "textarea",
+            "value": "",
+            "placeholder": "Fase 2: Instrucciones para procesar cada elemento..."
+          }
+        ],
+        "code": "return (async () => {\n  const key = AIService.getApiKey();\n  if (!key) throw new Error(\"Falta API Key en Ajustes\");\n\n  // 1. Obtener estados de los puertos (Dato IA, Cantidad, Etiqueta)\n  const inputs = ctx.runtime.nodeStates[ctx.nodeId] || [];\n  if (inputs[0] === undefined || inputs[1] === undefined || inputs[2] === undefined) {\n    ctx.log(\"⏳ Esperando componentes: Dato IA, Cantidad y Etiqueta...\");\n    return null;\n  }\n\n  const inputData = String(inputs[0]);\n  const dynamicCantidad = parseInt(inputs[1]) || 3;\n  const etiqueta = String(inputs[2]);\n  \n  const modelo = ctx.fields.MODELO || \"gemini-2.0-flash\";\n  const prefix = ctx.fields.PREFIJO || \"\";\n  const url = \"https://generativelanguage.googleapis.com/v1beta/models/\" + modelo + \":generateContent?key=\" + key;\n\n  async function callAI(system, user) {\n    const payload = { contents: [{ role: \"user\", parts: [{ text: system + \"\\n\\n\" + user }] }] };\n    const res = await fetch(url, { method: \"POST\", headers: { \"Content-Type\": \"application/json\" }, body: JSON.stringify(payload) });\n    if (!res.ok) throw new Error(\"API Error \" + res.status);\n    const data = await res.json();\n    return data.candidates[0].content.parts[0].text;\n  }\n\n  function emit(portName, data) {\n    const conns = ctx.graph.connections.filter(c => c.fromNode === ctx.nodeId && c.fromPort === portName);\n    conns.forEach(c => {\n      const nextNode = ctx.graph.nodes.find(n => n.id === c.toNode);\n      if (nextNode) ctx.runtime.executeNode(nextNode, data, c.toPort);\n    });\n  }\n\n  ctx.log(\"🚀 Iniciando Agregador con Generación de Nombre...\");\n\n  try {\n    // FASE 0: Definir Nombre mediante IA\n    ctx.log(\"🏷️ Solicitando título a la IA...\");\n    const namePrompt = `Analiza este texto y genera un título muy corto (max 4 palabras) y descriptivo. No uses puntuación. Texto: ${inputData.substring(0, 600)}`;\n    let aiTitle = await callAI(\"Eres un experto en síntesis de documentos.\", namePrompt);\n    aiTitle = aiTitle.replace(/[\\\\/\\?\\%\\*\\:\\|\\\"\\<\\>\\.]/g, \"\").trim();\n    const finalFileName = prefix + aiTitle;\n    ctx.log(`✅ Nombre generado: ${finalFileName}`);\n\n    // FASE 1: Generación de Lista (Cantidad Dinámica)\n    ctx.log(`📋 Planificando lista de ${dynamicCantidad} puntos...`);\n    const planMsg = `DATOS: ${inputData}\\nINSTR: ${ctx.fields.PROMPT_PLAN}\\nGenera un JSON array de strings con EXACTAMENTE ${dynamicCantidad} elementos. Ejemplo: [\"punto1\", \"punto2\"]`;\n    const rawList = await callAI(\"Solo respondes en JSON estricto.\", planMsg);\n    const cleanJson = rawList.replace(/```json/g, '').replace(/```/g, '').trim();\n    const list = JSON.parse(cleanJson);\n\n    let aggregatedText = \"\";\n\n    // FASE 2: Iteración\n    for (let i = 0; i < list.length; i++) {\n      ctx.log(`> Procesando (${i+1}/${list.length}): ${list[i]}`);\n      const execMsg = `ITEM: ${list[i]}\\nCONTEXTO: ${inputData}\\nINSTR: ${ctx.fields.PROMPT_EXEC}`;\n      const response = await callAI(\"Eres un analista experto.\", execMsg);\n      aggregatedText += response + \"\\n\\n---\\n\\n\";\n    }\n\n    // FASE 3: Exportación Única\n    const desktopItems = FileSystem.getItems('desktop');\n    let targetItem = desktopItems.find(it => it.title === finalFileName && it.type === 'narrative');\n    let targetId = targetItem ? targetItem.id : null;\n\n    if (!targetId) {\n      const newItem = FileSystem.createNarrative(finalFileName, 'desktop');\n      targetId = newItem.id;\n    }\n\n    const file = FileSystem.getItem(targetId);\n    if (file) {\n      file.content = { \n        tag: etiqueta.toUpperCase(), \n        text: aggregatedText.trim() \n      };\n      FileSystem.save();\n      \n      if (typeof NarrativeManager !== 'undefined' && typeof openWindows !== 'undefined') {\n        const wins = openWindows.filter(w => w.id === targetId || w.fileId === targetId);\n        wins.forEach(win => NarrativeManager.renderInWindow(win.id, targetId));\n      }\n    }\n\n    ctx.log(`🎉 Proceso terminado. Guardado como \"${finalFileName}\"`);\n    emit(\"fin\", \"COMPLETO\");\n    if (typeof refreshSystemViews === 'function') refreshSystemViews();\n    \n    return null;\n  } catch (e) {\n    ctx.log(\"❌ Error: \" + e.message);\n    throw e;\n  }\n})();",
+        "_isExternal": false
+      },
+      {
+        "id": "custom-self-exporter-exec-v22",
+        "title": "Crear Ejecutable v2.2 (Autoportable)",
+        "color": "#ef4444",
+        "inputs": [
+          "exec"
+        ],
+        "outputs": [],
+        "fields": [
+          {
+            "name": "filename",
+            "type": "text",
+            "placeholder": "NombreApp"
+          }
+        ],
+        "code": "\n// --- CREAR EJECUTABLE V2.2 (AUTOPORTABLE) ---\nconst name = ctx.fields.filename || \"App_\" + Date.now();\nctx.log(`⚡ Procesando ejecutable autoportable: ${name}...`);\n\ntry {\n    // 1. Serializar el grafo actual\n    const fullData = ctx.graph.serialize();\n\n    // 2. EXTRAER DEFINICIONES DE MÓDULOS USADOS (La \"Portabilidad\")\n    // Identificamos qué tipos de nodos hay en el grafo\n    const usedTypes = new Set(fullData.nodes.map(n => n.type));\n    \n    // Filtramos los módulos personalizados que existen en el sistema y que están en el grafo\n    const embeddedModules = ProgrammerManager.customModules.filter(m => usedTypes.has(m.id));\n    \n    if (embeddedModules.length > 0) {\n        ctx.log(`📦 Embebiendo ${embeddedModules.length} módulos personalizados...`);\n    }\n\n    // 3. CIRUGÍA: Extirpar este mismo nodo exportador para evitar bucles\n    const cleanNodes = fullData.nodes.filter(n => n.id !== ctx.nodeId);\n    const cleanConns = fullData.connections.filter(c => \n        c.fromNode !== ctx.nodeId && c.toNode !== ctx.nodeId\n    );\n\n    // 4. Reconstruir el objeto con las definiciones embebidas\n    const finalContent = {\n        ...fullData,\n        nodes: cleanNodes,\n        connections: cleanConns,\n        embeddedModules: embeddedModules, // <-- AQUÍ VA LA MAGIA\n        panX: 0, panY: 0, scale: 1\n    };\n\n    // 5. Crear el archivo en el Sistema\n    if (typeof FileSystem !== 'undefined') {\n        const newProg = FileSystem.createProgram(name, 'desktop');\n        \n        newProg.type = 'executable'; \n        newProg.icon = 'zap'; \n        newProg.color = 'text-yellow-500';\n        newProg.content = finalContent;\n        \n        FileSystem.save();\n        if (typeof refreshSystemViews === 'function') refreshSystemViews();\n        \n        ctx.log(`✅ ¡Éxito! \"${name}\" es ahora autoportable.`);\n    } else {\n        ctx.log(\"❌ Error: No se encuentra el Sistema de Archivos.\");\n    }\n} catch (e) {\n    ctx.log(\"❌ Error: \" + e.message);\n}\n",
+        "_isExternal": false
+      }
+    ]
+  },
+  "x": 0,
+  "y": 0,
+  "icon": "zap",
+  "color": "text-yellow-500"
+}

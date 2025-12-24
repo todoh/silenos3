@@ -1,0 +1,259 @@
+{
+  "id": "program-1766531783457161",
+  "type": "executable",
+  "title": "🧠 Generador de Datos 3-27b",
+  "parentId": "folder-1766530794088863",
+  "content": {
+    "nodes": [
+      {
+        "id": "node-program-17664643395075-0",
+        "type": "start",
+        "x": 87.5555555555557,
+        "y": 10.666666666666508,
+        "inputs": [],
+        "outputs": [
+          "out"
+        ],
+        "values": {},
+        "uiFlags": {}
+      },
+      {
+        "id": "node-program-17664643395075-4",
+        "type": "custom-ai-selector-fixed-v2",
+        "x": 715.3968253968252,
+        "y": -112.69841269841255,
+        "inputs": [
+          "prompt"
+        ],
+        "outputs": [
+          "respuesta"
+        ],
+        "values": {
+          "MODELO": "gemma-3-27b-it",
+          "SYSTEM": "haz un informe sobre este tema:"
+        },
+        "uiFlags": {
+          "MODELO": false,
+          "SYSTEM": false
+        }
+      },
+      {
+        "id": "node-program-17664643395075-10",
+        "type": "custom-narrative-exporter-pro",
+        "x": 1467.7777777777774,
+        "y": 185.55555555555577,
+        "inputs": [
+          "Titulo",
+          "Etiqueta",
+          "Contenido"
+        ],
+        "outputs": [
+          "FileID"
+        ],
+        "values": {},
+        "uiFlags": {}
+      },
+      {
+        "id": "node-program-17664643395075-11",
+        "type": "custom-ai-selector-fixed-v2",
+        "x": 758.5714285714282,
+        "y": 288.7499999999999,
+        "inputs": [
+          "prompt"
+        ],
+        "outputs": [
+          "respuesta"
+        ],
+        "values": {
+          "MODELO": "gemma-3-27b-it",
+          "SYSTEM": "elabora un titulo de 5 a 7 palabras para este texto; (dame solo el titulo \"en bruto\")"
+        },
+        "uiFlags": {
+          "MODELO": false,
+          "SYSTEM": false
+        }
+      },
+      {
+        "id": "node-program-17664643395075-12",
+        "type": "custom-dynamic-form-ui",
+        "x": 422.916666666667,
+        "y": 52.91666666666667,
+        "inputs": [
+          "open",
+          "etiqueta",
+          "dato-a-crear"
+        ],
+        "outputs": [
+          "data",
+          "dato-a-crear",
+          "etiqueta"
+        ],
+        "values": {
+          "title": "📋 Generador de Datos con IA"
+        },
+        "uiFlags": {
+          "title": false
+        }
+      },
+      {
+        "id": "node-program-17664643395075-13",
+        "type": "custom-self-exporter-exec-v22",
+        "x": 187.49999999999997,
+        "y": 180.83333333333331,
+        "inputs": [
+          "exec"
+        ],
+        "outputs": [],
+        "values": {
+          "filename": ""
+        },
+        "uiFlags": {
+          "filename": false
+        }
+      }
+    ],
+    "connections": [
+      {
+        "fromNode": "node-program-17664643395075-4",
+        "fromPort": "respuesta",
+        "toNode": "node-program-17664643395075-10",
+        "toPort": "Contenido"
+      },
+      {
+        "fromNode": "node-program-17664643395075-12",
+        "fromPort": "etiqueta",
+        "toNode": "node-program-17664643395075-10",
+        "toPort": "Etiqueta"
+      },
+      {
+        "fromNode": "node-program-17664643395075-11",
+        "fromPort": "respuesta",
+        "toNode": "node-program-17664643395075-10",
+        "toPort": "Titulo"
+      },
+      {
+        "fromNode": "node-program-17664643395075-12",
+        "fromPort": "dato-a-crear",
+        "toNode": "node-program-17664643395075-11",
+        "toPort": "prompt"
+      },
+      {
+        "fromNode": "node-program-17664643395075-12",
+        "fromPort": "dato-a-crear",
+        "toNode": "node-program-17664643395075-4",
+        "toPort": "prompt"
+      },
+      {
+        "fromNode": "node-program-17664643395075-0",
+        "fromPort": "out",
+        "toNode": "node-program-17664643395075-12",
+        "toPort": "open"
+      },
+      {
+        "fromNode": "node-program-17664643395075-11",
+        "fromPort": "respuesta",
+        "toNode": "node-program-17664643395075-12",
+        "toPort": "open"
+      },
+      {
+        "fromNode": "node-program-17664643395075-0",
+        "fromPort": "out",
+        "toNode": "node-program-17664643395075-13",
+        "toPort": "exec"
+      }
+    ],
+    "panX": 0,
+    "panY": 0,
+    "scale": 1,
+    "embeddedModules": [
+      {
+        "id": "custom-dynamic-form-ui",
+        "title": "Formulario UI Dinámico",
+        "color": "#db2777",
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "data"
+        ],
+        "fields": [
+          {
+            "name": "title",
+            "type": "text",
+            "value": "Ingresar Datos"
+          }
+        ],
+        "isDynamic": true,
+        "code": "\n// --- FORMULARIO DINÁMICO (SOLO ABRE CON 'OPEN') ---\n\n// 1. [CORRECCIÓN] Si la señal no viene por 'open', detenemos la ejecución.\n// Los datos de otros puertos ya se han guardado automáticamente en memoria.\nif (ctx.port !== 'open') return null;\n\n// 2. Detectar puertos definidos en el grafo\nconst nodeDef = ctx.graph.nodes.find(n => n.id === ctx.nodeId);\nconst formFields = nodeDef.inputs.filter(p => p !== 'open');\n\nif (formFields.length === 0) {\n    alert(\"Usa el botón '+ In' en el nodo para añadir los campos.\");\n    return null;\n}\n\nconst formTitle = ctx.fields.title || \"Formulario\";\nconst inputValues = inputs || [];\n\nctx.log(`🖥️ Abriendo formulario '${formTitle}'...`);\n\nreturn new Promise((resolve) => {\n    const winId = 'dyn-form-' + Date.now();\n    \n    // --- CREACIÓN DE VENTANA ---\n    const win = document.createElement('div');\n    win.id = winId;\n    win.className = 'window neumorph-out pop-in pointer-events-auto';\n    win.style.cssText = `\n        position: absolute;\n        top: 150px;\n        left: 150px;\n        width: 350px;\n        height: auto;\n        max-height: 80vh;\n        z-index: 9999;\n        display: flex;\n        flex-direction: column;\n        background: #e0e5ec;\n        border-radius: 20px;\n        overflow: hidden;\n        box-shadow: 10px 10px 30px rgba(0,0,0,0.2);\n        pointer-events: auto !important;\n    `;\n\n    // HEADER\n    const header = document.createElement('div');\n    header.className = 'window-header';\n    header.style.cssText = `\n        padding: 12px 15px;\n        display: flex;\n        justify-content: space-between;\n        align-items: center;\n        background: #e0e5ec;\n        cursor: grab;\n        border-bottom: 1px solid rgba(255,255,255,0.5);\n        user-select: none;\n    `;\n    header.innerHTML = `\n        <div style=\"display:flex; gap:8px; align-items:center;\">\n            <span style=\"font-weight:bold; color:#db2777; font-size:0.9rem;\">📝 ${formTitle}</span>\n        </div>\n        <button id=\"close-${winId}\" style=\"border:none; background:transparent; cursor:pointer; font-size:1.2rem; color:#666;\">×</button>\n    `;\n\n    // BODY\n    const body = document.createElement('div');\n    body.style.cssText = `\n        padding: 20px;\n        background: #e0e5ec;\n        display: flex;\n        flex-direction: column;\n        gap: 15px;\n        overflow-y: auto;\n    `;\n\n    // --- CAMPOS ---\n    formFields.forEach(fieldName => {\n        const portIndex = nodeDef.inputs.indexOf(fieldName);\n        // Aquí recuperamos el valor que se guardó silenciosamente antes\n        const defaultVal = (inputValues[portIndex] !== undefined && inputValues[portIndex] !== null) ? inputValues[portIndex] : \"\";\n\n        const wrapper = document.createElement('div');\n        \n        const lbl = document.createElement('label');\n        lbl.innerText = fieldName;\n        lbl.style.cssText = 'display:block; font-size:0.7rem; font-weight:bold; color:#666; text-transform:uppercase; margin-bottom:5px; margin-left:2px;';\n        \n        const input = document.createElement('input');\n        input.type = 'text'; \n        input.id = `input-${winId}-${fieldName}`;\n        input.value = defaultVal;\n        input.onmousedown = (e) => e.stopPropagation();\n        input.style.cssText = 'width:100%; background:#e0e5ec; box-shadow:inset 3px 3px 6px #b8b9be, inset -3px -3px 6px #ffffff; border:none; padding:10px 12px; border-radius:12px; font-size:0.9rem; color:#333; outline:none; font-family:inherit; transition: all 0.2s;';\n        \n        input.onfocus = () => input.style.boxShadow = 'inset 4px 4px 8px #b8b9be, inset -4px -4px 8px #ffffff';\n        input.onblur = () => input.style.boxShadow = 'inset 3px 3px 6px #b8b9be, inset -3px -3px 6px #ffffff';\n\n        wrapper.appendChild(lbl);\n        wrapper.appendChild(input);\n        body.appendChild(wrapper);\n    });\n\n    // FOOTER\n    const footer = document.createElement('div');\n    footer.style.padding = \"0 20px 20px 20px\";\n\n    const btn = document.createElement('button');\n    btn.innerText = \"ACEPTAR\";\n    btn.style.cssText = `\n        width: 100%;\n        padding: 12px;\n        background: #db2777;\n        border: none;\n        border-radius: 12px;\n        box-shadow: 5px 5px 10px #b8b9be, -5px -5px 10px #ffffff;\n        font-weight: bold;\n        color: white;\n        cursor: pointer;\n        transition: transform 0.1s;\n    `;\n    \n    btn.onmousedown = (e) => { e.stopPropagation(); btn.style.transform = 'scale(0.96)'; };\n    btn.onmouseup = () => btn.style.transform = 'scale(1)';\n\n    btn.onclick = (e) => {\n        e.stopPropagation();\n        const result = {};\n        formFields.forEach(fieldName => {\n            const el = document.getElementById(`input-${winId}-${fieldName}`);\n            if(el) result[fieldName] = el.value;\n        });\n\n        win.remove();\n        window.removeEventListener('mousemove', onMouseMove);\n        window.removeEventListener('mouseup', onMouseUp);\n        \n        ctx.log(\"✅ Datos enviados.\");\n        resolve(result);\n    };\n\n    footer.appendChild(btn);\n    win.appendChild(header);\n    win.appendChild(body);\n    win.appendChild(footer);\n\n    const container = document.getElementById('windows-container') || document.body;\n    container.appendChild(win);\n\n    // --- DRAG & DROP ---\n    let isDragging = false, startX, startY, initLeft, initTop;\n    \n    header.onmousedown = (e) => {\n        if(e.button !== 0) return;\n        isDragging = true;\n        startX = e.clientX;\n        startY = e.clientY;\n        initLeft = win.offsetLeft;\n        initTop = win.offsetTop;\n        win.style.zIndex = 99999;\n        header.style.cursor = 'grabbing';\n        e.preventDefault();\n    };\n\n    const onMouseMove = (e) => {\n        if (!isDragging) return;\n        e.preventDefault();\n        const dx = e.clientX - startX;\n        const dy = e.clientY - startY;\n        win.style.left = (initLeft + dx) + 'px';\n        win.style.top = (initTop + dy) + 'px';\n    };\n\n    const onMouseUp = () => {\n        isDragging = false;\n        header.style.cursor = 'grab';\n    };\n\n    window.addEventListener('mousemove', onMouseMove);\n    window.addEventListener('mouseup', onMouseUp);\n\n    document.getElementById(`close-${winId}`).onclick = (e) => {\n        e.stopPropagation();\n        win.remove();\n        window.removeEventListener('mousemove', onMouseMove);\n        window.removeEventListener('mouseup', onMouseUp);\n        ctx.log(\"❌ Cancelado.\");\n        resolve(null);\n    };\n});\n",
+        "type": "custom-module",
+        "_isExternal": true
+      },
+      {
+        "id": "custom-ai-selector-fixed-v2",
+        "title": "IA (Selector Manual)",
+        "color": "#7c3aed",
+        "inputs": [
+          "prompt"
+        ],
+        "outputs": [
+          "respuesta"
+        ],
+        "fields": [
+          {
+            "name": "MODELO",
+            "type": "text",
+            "value": "gemini-2.0-flash",
+            "placeholder": "Ej: gemini-1.5-pro"
+          },
+          {
+            "name": "SYSTEM",
+            "type": "textarea",
+            "value": "",
+            "placeholder": "Instrucciones de sistema..."
+          }
+        ],
+        "code": "return (async () => {\n  const key = AIService.getApiKey();\n  if (!key) throw new Error(\"Falta API Key en Ajustes\");\n\n  // Obtener inputs\n  const modelo = ctx.fields.MODELO || \"gemini-2.0-flash\";\n  const sys = ctx.fields.SYSTEM || \"\";\n  const userMsg = ctx.input || \"\";\n\n  // Construir URL sin backticks para evitar bugs del importador\n  const url = \"https://generativelanguage.googleapis.com/v1beta/models/\" + modelo + \":generateContent?key=\" + key;\n\n  ctx.log(\"Consultando: \" + modelo);\n\n  const payload = {\n    contents: [{\n      role: \"user\",\n      parts: [{ text: (sys ? sys + \"\\n\\n\" : \"\") + String(userMsg) }]\n    }]\n  };\n\n  try {\n    const res = await fetch(url, {\n      method: \"POST\",\n      headers: { \"Content-Type\": \"application/json\" },\n      body: JSON.stringify(payload)\n    });\n\n    if (!res.ok) {\n       const err = await res.json().catch(() => ({}));\n       throw new Error(\"API Error \" + res.status);\n    }\n\n    const data = await res.json();\n    const txt = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts ? data.candidates[0].content.parts[0].text : \"\";\n    return txt || \"[Sin respuesta]\";\n\n  } catch (e) {\n    ctx.log(\"Error: \" + e.message);\n    throw e;\n  }\n})();",
+        "type": "custom-module",
+        "_isExternal": true
+      },
+      {
+        "id": "custom-narrative-exporter-pro",
+        "title": "💾 Exportar Narrativa",
+        "color": "#f97316",
+        "inputs": [
+          "Titulo",
+          "Etiqueta",
+          "Contenido"
+        ],
+        "outputs": [
+          "FileID"
+        ],
+        "fields": [],
+        "code": "// --- EXPORTADOR A DATO NARRATIVO ---\n// Inputs: [0: Título, 1: Etiqueta, 2: Texto]\n\n// 1. Obtener datos de entrada con valores por defecto\nconst title = (inputs && inputs[0]) ? String(inputs[0]) : \"Nota Exportada\";\nconst tag = (inputs && inputs[1]) ? String(inputs[1]) : \"GENERAL\";\nconst text = (inputs && inputs[2]) ? String(inputs[2]) : \"\";\n\nctx.log(`📝 Procesando Narrativa: \"${title}\"...`);\n\ntry {\n    // 2. Buscar si ya existe un archivo con ese nombre en el escritorio\n    const desktopItems = FileSystem.getItems('desktop');\n    let item = desktopItems.find(i => i.title === title && i.type === 'narrative');\n    \n    // 3. Si no existe, lo creamos\n    if (!item) {\n        ctx.log(\"✨ Creando nuevo archivo...\");\n        item = FileSystem.createNarrative(title, 'desktop');\n    } else {\n        ctx.log(\"🔄 Actualizando archivo existente...\");\n    }\n\n    // 4. Actualizar contenido\n    item.content.tag = tag;\n    item.content.text = text;\n    \n    // Actualizar título por si acaso cambió en el input pero coincidió ID (poco probable aquí, pero buena práctica)\n    item.title = title;\n\n    // 5. Guardar en Disco\n    FileSystem.save();\n\n    // 6. Refrescar Vistas (Live Update)\n    // Si la ventana de este archivo está abierta, forzamos su repintado para ver los cambios en tiempo real\n    if (typeof NarrativeManager !== 'undefined' && typeof openWindows !== 'undefined') {\n        const wins = openWindows.filter(w => w.id === item.id || w.fileId === item.id);\n        wins.forEach(win => NarrativeManager.renderInWindow(win.id, item.id));\n    }\n    \n    // Refrescar icono del escritorio (por si es nuevo)\n    if (typeof refreshSystemViews === 'function') refreshSystemViews();\n\n    ctx.log(\"✅ Guardado con éxito.\");\n    \n    // Devolver ID para seguir encadenando procesos\n    return item.id;\n\n} catch (e) {\n    ctx.log(\"❌ Error guardando narrativa: \" + e.message);\n    return null;\n}",
+        "_isExternal": false
+      },
+      {
+        "id": "custom-self-exporter-exec-v22",
+        "title": "Crear Ejecutable v2.2 (Autoportable)",
+        "color": "#ef4444",
+        "inputs": [
+          "exec"
+        ],
+        "outputs": [],
+        "fields": [
+          {
+            "name": "filename",
+            "type": "text",
+            "placeholder": "NombreApp"
+          }
+        ],
+        "code": "\n// --- CREAR EJECUTABLE V2.2 (AUTOPORTABLE) ---\nconst name = ctx.fields.filename || \"App_\" + Date.now();\nctx.log(`⚡ Procesando ejecutable autoportable: ${name}...`);\n\ntry {\n    // 1. Serializar el grafo actual\n    const fullData = ctx.graph.serialize();\n\n    // 2. EXTRAER DEFINICIONES DE MÓDULOS USADOS (La \"Portabilidad\")\n    // Identificamos qué tipos de nodos hay en el grafo\n    const usedTypes = new Set(fullData.nodes.map(n => n.type));\n    \n    // Filtramos los módulos personalizados que existen en el sistema y que están en el grafo\n    const embeddedModules = ProgrammerManager.customModules.filter(m => usedTypes.has(m.id));\n    \n    if (embeddedModules.length > 0) {\n        ctx.log(`📦 Embebiendo ${embeddedModules.length} módulos personalizados...`);\n    }\n\n    // 3. CIRUGÍA: Extirpar este mismo nodo exportador para evitar bucles\n    const cleanNodes = fullData.nodes.filter(n => n.id !== ctx.nodeId);\n    const cleanConns = fullData.connections.filter(c => \n        c.fromNode !== ctx.nodeId && c.toNode !== ctx.nodeId\n    );\n\n    // 4. Reconstruir el objeto con las definiciones embebidas\n    const finalContent = {\n        ...fullData,\n        nodes: cleanNodes,\n        connections: cleanConns,\n        embeddedModules: embeddedModules, // <-- AQUÍ VA LA MAGIA\n        panX: 0, panY: 0, scale: 1\n    };\n\n    // 5. Crear el archivo en el Sistema\n    if (typeof FileSystem !== 'undefined') {\n        const newProg = FileSystem.createProgram(name, 'desktop');\n        \n        newProg.type = 'executable'; \n        newProg.icon = 'zap'; \n        newProg.color = 'text-yellow-500';\n        newProg.content = finalContent;\n        \n        FileSystem.save();\n        if (typeof refreshSystemViews === 'function') refreshSystemViews();\n        \n        ctx.log(`✅ ¡Éxito! \"${name}\" es ahora autoportable.`);\n    } else {\n        ctx.log(\"❌ Error: No se encuentra el Sistema de Archivos.\");\n    }\n} catch (e) {\n    ctx.log(\"❌ Error: \" + e.message);\n}\n",
+        "_isExternal": false
+      }
+    ]
+  },
+  "x": 0,
+  "y": 0,
+  "icon": "zap",
+  "color": "text-yellow-500"
+}
