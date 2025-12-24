@@ -1,0 +1,76 @@
+{
+  "id": "program-urban-ki-v2-fixed",
+  "type": "executable",
+  "title": "🏙️ URBANO X V2: RESONANCIA TOTAL 🏙️",
+  "parentId": "folder-1766530794088863",
+  "content": {
+    "nodes": [
+      {
+        "id": "node-start-urban",
+        "type": "start",
+        "x": 50,
+        "y": 50,
+        "inputs": [],
+        "outputs": [
+          "out"
+        ],
+        "values": {},
+        "uiFlags": {}
+      },
+      {
+        "id": "node-urban-engine",
+        "type": "urban-silenos-v2",
+        "x": 350,
+        "y": 80,
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "interaction_end"
+        ],
+        "values": {
+          "titulo": "Urbano X: La Cúspide del Sonido"
+        },
+        "uiFlags": {
+          "titulo": false
+        }
+      }
+    ],
+    "connections": [
+      {
+        "fromNode": "node-start-urban",
+        "fromPort": "out",
+        "toNode": "node-urban-engine",
+        "toPort": "open"
+      }
+    ],
+    "panX": 0,
+    "panY": 0,
+    "scale": 1,
+    "embeddedModules": [
+      {
+        "id": "urban-silenos-v2",
+        "title": "Urban Engine V2 (Z-H-R)",
+        "color": "#0f172a",
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "interaction_end"
+        ],
+        "fields": [
+          {
+            "name": "titulo",
+            "type": "text",
+            "value": "Resonancia Profunda Corregida"
+          }
+        ],
+        "code": "\nconst winId = 'urban-v2-window';\nconst existing = document.getElementById(winId);\nif (existing) { existing.remove(); return; }\n\n// --- MOTOR DE AUDIO AVANZADO (P-D-R) ---\nlet audioCtx = null;\nconst masterGain = () => {\n    const g = audioCtx.createGain();\n    g.gain.setValueAtTime(0.4, audioCtx.currentTime);\n    g.connect(audioCtx.destination);\n    return g;\n};\n\nconst playSound = (type, volume = 0.5) => {\n    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();\n    const dest = masterGain();\n\n    if (type === 'KICK') {\n        const osc = audioCtx.createOscillator();\n        const gain = audioCtx.createGain();\n        osc.type = 'triangle';\n        osc.frequency.setValueAtTime(120, audioCtx.currentTime);\n        osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.4);\n        gain.gain.setValueAtTime(volume, audioCtx.currentTime);\n        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);\n        osc.connect(gain); gain.connect(dest);\n        osc.start(); osc.stop(audioCtx.currentTime + 0.5);\n    } else if (type === 'SNARE') {\n        const osc = audioCtx.createOscillator();\n        const noise = audioCtx.createBufferSource();\n        const gain = audioCtx.createGain();\n        const buffer = audioCtx.createBuffer(1, 44100 * 0.2, 44100);\n        const data = buffer.getChannelData(0);\n        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;\n        noise.buffer = buffer;\n        osc.frequency.setValueAtTime(180, audioCtx.currentTime);\n        gain.gain.setValueAtTime(volume, audioCtx.currentTime);\n        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);\n        noise.connect(gain); osc.connect(gain); gain.connect(dest);\n        noise.start(); osc.start(); osc.stop(audioCtx.currentTime + 0.2);\n    } else if (type === 'HAT') {\n        const osc = audioCtx.createOscillator();\n        const gain = audioCtx.createGain();\n        const filter = audioCtx.createBiquadFilter();\n        osc.type = 'square'; osc.frequency.value = 8000;\n        filter.type = 'highpass'; filter.frequency.value = 5000;\n        gain.gain.setValueAtTime(volume * 0.2, audioCtx.currentTime);\n        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);\n        osc.connect(filter); filter.connect(gain); gain.connect(dest);\n        osc.start(); osc.stop(audioCtx.currentTime + 0.03);\n    } else if (type === 'COWBELL') {\n        const osc1 = audioCtx.createOscillator();\n        const osc2 = audioCtx.createOscillator();\n        const gain = audioCtx.createGain();\n        osc1.frequency.value = 800; osc2.frequency.value = 540;\n        gain.gain.setValueAtTime(volume * 0.4, audioCtx.currentTime);\n        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);\n        osc1.connect(gain); osc2.connect(gain); gain.connect(dest);\n        osc1.start(); osc2.start(); osc1.stop(audioCtx.currentTime + 0.1); osc2.stop(audioCtx.currentTime + 0.1);\n    }\n};\n\nconst generos = {\n    'UK_DRILL': { name: 'UK Drill', steps: 16, pattern: [1,0,0,0,0,0,2,0,0,1,2,0,0,0,0,0], tempo: 141, color: '#334155', info: 'Tramos (T) de bajos deslizantes.' },\n    'PHONK': { name: 'Phonk', steps: 16, pattern: [1,0,3,0,2,0,3,1,1,3,2,0,3,0,2,3], tempo: 130, color: '#7c3aed', info: 'Resonancia (R) de Cowbell y saturación.' },\n    'GLITCHCORE': { name: 'Glitchcore', steps: 8, pattern: [1,3,2,3,1,1,2,3], tempo: 175, color: '#f472b6', info: 'Granularidad (G) extrema y caos (X).' },\n    'OLD_REGGAETON': { name: 'Old School', steps: 8, pattern: [1,0,0,2,0,1,2,0], tempo: 95, color: '#f59e0b', info: 'Acción (A) fundacional del Dembow.' },\n    'LOFI': { name: 'Lo-Fi', steps: 16, pattern: [1,0,0,0,2,0,0,1,0,1,2,0,0,0,0,0], tempo: 85, color: '#94a3b8', info: 'Equilibrio (E) y armonía imperfecta.' },\n    'GRIME': { name: 'Grime', steps: 16, pattern: [1,0,2,0,1,0,2,0,1,1,2,0,0,0,2,0], tempo: 140, color: '#064e3b', info: 'Ki (K) agresivo y minimalismo físico.' },\n    'TRAP': { name: 'Trap', steps: 16, pattern: [1,0,0,0,2,0,0,0,1,0,0,1,2,0,0,0], tempo: 145, color: '#8b5cf6', info: 'Potencial (P) en el 808.' },\n    'BOOM_BAP': { name: 'Boom Bap', steps: 16, pattern: [1,0,0,0,2,0,0,1,1,0,2,0,0,0,0,0], tempo: 92, color: '#1e293b', info: 'Material (M) clásico y sólido.' },\n    'DEMBOW': { name: 'Dembow', steps: 8, pattern: [1,0,0,2,0,1,2,0], tempo: 115, color: '#dc2626', info: 'Ritmo en bucle continuo (U).' },\n    'D&B': { name: 'Drum & Bass', steps: 16, pattern: [1,0,0,0,2,0,0,1,0,1,0,0,2,0,0,0], tempo: 172, color: '#2563eb', info: 'Velocidad de confluencia (Y).' },\n    'HYPERPOP': { name: 'Hyperpop', steps: 16, pattern: [1,3,1,3,2,3,2,3,1,1,1,1,2,2,2,2], tempo: 165, color: '#db2777', info: 'Sabiduría (Z) digital y distorsión.' },\n    'BAILE_FUNK': { name: 'Baile Funk', steps: 16, pattern: [1,0,0,2,0,0,1,0,0,0,1,2,0,0,0,0], tempo: 130, color: '#fbbf24', info: 'Fuerza bruta y confluencia rítmica.' }\n};\n\nlet activeGenre = 'UK_DRILL';\nlet isPlaying = false;\nlet tempo = 141;\nlet currentStep = 0;\n\n// --- INTERFAZ ---\nconst win = document.createElement('div');\nwin.id = winId;\nwin.style.cssText = `position: absolute; top: 30px; left: 80px; width: 480px; z-index: 9999; background: #0f172a; border-radius: 30px; border: 1px solid #1e293b; color: #f8fafc; font-family: sans-serif; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);`;\n\nconst header = document.createElement('div');\nheader.style.cssText = `padding: 20px; cursor: grab; background: #1e293b; display: flex; justify-content: space-between; align-items: center;`;\nheader.innerHTML = `<div><div style=\"font-size:0.6rem; color:#94a3b8\">SILEN AUDIO ENGINE</div><div style=\"font-weight:bold; letter-spacing:1px\">URBANO X: RESONANCIA V2</div></div><button id=\"close-${winId}\" style=\"border:none; background:transparent; color:#ef4444; cursor:pointer; font-size:1.5rem;\">×</button>`;\n\nconst body = document.createElement('div');\nbody.style.cssText = `padding: 24px; display: flex; flex-direction: column; gap: 18px;`;\n\n// --- VISUALIZADOR CANVAS ---\nconst visualContainer = document.createElement('div');\nvisualContainer.style.cssText = `height: 140px; border-radius: 20px; background: #020617; position: relative; border: 1px solid #334155;`;\nconst canvas = document.createElement('canvas');\ncanvas.width = 432; canvas.height = 140;\nvisualContainer.appendChild(canvas);\n\nconst c = canvas.getContext('2d');\nlet particles = [];\n\nconst drawCanvas = () => {\n    c.fillStyle = 'rgba(2, 6, 23, 0.3)';\n    c.fillRect(0, 0, canvas.width, canvas.height);\n    \n    const g = generos[activeGenre];\n    const stepWidth = canvas.width / g.steps;\n\n    for(let i=0; i<g.steps; i++) {\n        c.strokeStyle = '#1e293b';\n        c.strokeRect(i * stepWidth, 0, stepWidth, canvas.height);\n        if (g.pattern[i] > 0) {\n            c.fillStyle = (currentStep === i && isPlaying) ? g.color : '#334155';\n            const h = g.pattern[i] === 1 ? 60 : (g.pattern[i] === 2 ? 40 : 20);\n            c.fillRect(i * stepWidth + 4, canvas.height - h - 10, stepWidth - 8, h);\n        }\n    }\n\n    if (isPlaying) {\n        for (let i = particles.length - 1; i >= 0; i--) {\n            const p = particles[i];\n            p.y += p.vy; p.x += p.vx; p.life -= 0.02;\n            \n            if (p.life <= 0) {\n                particles.splice(i, 1);\n                continue;\n            }\n\n            // FIX: Math.max(0.1, ...) asegura que el radio nunca sea <= 0\n            const radius = Math.max(0.1, 3 * p.life);\n            c.fillStyle = g.color + Math.floor(p.life * 255).toString(16).padStart(2, '0');\n            c.beginPath(); \n            c.arc(p.x, p.y, radius, 0, Math.PI * 2); \n            c.fill();\n        }\n    }\n    requestAnimationFrame(drawCanvas);\n};\n\nlet nextTick = 0;\nconst updateRhythm = () => {\n    if (!isPlaying) return;\n    const now = audioCtx.currentTime;\n    const stepDuration = (60 / tempo) / 4;\n\n    if (now >= nextTick) {\n        const g = generos[activeGenre];\n        const note = g.pattern[currentStep];\n        \n        if (note === 1) playSound('KICK', 0.9);\n        if (note === 2) playSound('SNARE', 0.7);\n        if (note === 3) playSound('COWBELL', 0.6);\n        if (Math.random() > 0.2) playSound('HAT', 0.3);\n\n        if (note > 0) {\n            for(let j=0; j<5; j++) particles.push({\n                x: (currentStep * (canvas.width / g.steps)) + 20, \n                y: 70, \n                vx: Math.random()*4-2, \n                vy: Math.random()*4-2, \n                life: 1\n            });\n        }\n\n        currentStep = (currentStep + 1) % g.steps;\n        nextTick = now + stepDuration;\n    }\n    setTimeout(updateRhythm, 10);\n};\n\nconst grid = document.createElement('div');\ngrid.style.cssText = `display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;`;\n\nObject.keys(generos).forEach(key => {\n    const b = document.createElement('button');\n    b.innerText = key.replace('_', ' ');\n    b.style.cssText = `padding: 8px 4px; border: 1px solid #334155; border-radius: 8px; background: #1e293b; color: #94a3b8; font-size: 0.55rem; cursor: pointer; font-weight:bold; transition: 0.2s;`;\n    b.onclick = () => {\n        activeGenre = key; tempo = generos[key].tempo; currentStep = 0;\n        document.querySelectorAll('.genre-btn').forEach(btn => btn.style.borderColor = '#334155');\n        b.style.borderColor = generos[key].color;\n        updateUI();\n    };\n    b.classList.add('genre-btn');\n    grid.appendChild(b);\n});\n\nconst infoPanel = document.createElement('div');\ninfoPanel.style.cssText = `padding: 15px; background: rgba(30, 41, 59, 0.5); border-radius: 15px; font-size: 0.7rem; border-left: 4px solid #8b5cf6; min-height: 50px;`;\n\nconst btnPlay = document.createElement('button');\nbtnPlay.innerText = \"SOLTAR EL KI\";\nbtnPlay.style.cssText = `width: 100%; padding: 18px; border: none; border-radius: 15px; background: #8b5cf6; color: white; font-weight: 900; cursor: pointer; text-transform: uppercase; letter-spacing: 3px;`;\nbtnPlay.onclick = () => {\n    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();\n    isPlaying = !isPlaying;\n    btnPlay.innerText = isPlaying ? \"DETENER FLUJO\" : \"SOLTAR EL KI\";\n    btnPlay.style.background = isPlaying ? \"#334155\" : \"#8b5cf6\";\n    if(isPlaying) { nextTick = audioCtx.currentTime; updateRhythm(); }\n};\n\nconst updateUI = () => {\n    const g = generos[activeGenre];\n    infoPanel.innerHTML = `<div style=\"color:${g.color}; font-weight:bold; font-size:0.9rem; margin-bottom:4px\">${g.name} @ ${g.tempo} BPM</div><div style=\"color:#cbd5e1; font-style:italic\">${g.info}</div>`;\n};\n\nbody.append(visualContainer, infoPanel, grid, btnPlay);\nwin.append(header, body); document.body.appendChild(win);\n\nlet dragging = false, offset = {x:0, y:0};\nheader.onmousedown = (e) => { dragging = true; offset.x = e.clientX - win.offsetLeft; offset.y = e.clientY - win.offsetTop; };\nwindow.onmousemove = (e) => { if(dragging) { win.style.left = (e.clientX - offset.x)+'px'; win.style.top = (e.clientY - offset.y)+'px'; } };\nwindow.onmouseup = () => dragging = false;\ndocument.getElementById(`close-${winId}`).onclick = () => { isPlaying = false; win.remove(); };\n\ndrawCanvas(); updateUI();\nreturn \"Urbano X Fixed\";\n"
+      }
+    ]
+  },
+  "x": 0,
+  "y": 0,
+  "icon": "zap",
+  "color": "text-yellow-400"
+}
