@@ -1,0 +1,76 @@
+{
+  "id": "program-solitario-silen-v2",
+  "type": "executable",
+  "title": "🎮 SOLITARIO PRO 🃏🎴",
+  "parentId": "folder-1766546174407462",
+  "content": {
+    "nodes": [
+      {
+        "id": "node-start-solitaire",
+        "type": "start",
+        "x": 50,
+        "y": 50,
+        "inputs": [],
+        "outputs": [
+          "out"
+        ],
+        "values": {},
+        "uiFlags": {}
+      },
+      {
+        "id": "node-solitaire-engine",
+        "type": "solitaire-silenos-v2",
+        "x": 350,
+        "y": 80,
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "game_end"
+        ],
+        "values": {
+          "titulo": "Solitario"
+        },
+        "uiFlags": {
+          "titulo": false
+        }
+      }
+    ],
+    "connections": [
+      {
+        "fromNode": "node-start-solitaire",
+        "fromPort": "out",
+        "toNode": "node-solitaire-engine",
+        "toPort": "open"
+      }
+    ],
+    "panX": 0,
+    "panY": 0,
+    "scale": 1,
+    "embeddedModules": [
+      {
+        "id": "solitaire-silenos-v2",
+        "title": "Solitario (Z-H-F)",
+        "color": "#1e293b",
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "game_end"
+        ],
+        "fields": [
+          {
+            "name": "titulo",
+            "type": "text",
+            "value": "Solitario Drag & Drop"
+          }
+        ],
+        "code": "\nconst winId = 'solitaire-v2-window';\nconst existing = document.getElementById(winId);\nif (existing) { existing.remove(); return; }\n\n// --- VARIABLES Y ESTADO (Z-N) ---\nconst suits = ['♥', '♦', '♣', '♠'];\nconst ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];\nconst colors = { '♥': 'red', '♦': 'red', '♣': 'black', '♠': 'black' };\n\nlet deck = [], tableau = [[],[],[],[],[],[],[]], foundations = [[],[],[],[]];\nlet stock = [], waste = [], selected = null;\n\n// --- INTERFAZ NEUMÓRFICA (F) ---\nconst win = document.createElement('div');\nwin.id = winId;\nwin.style.cssText = `\n    position: absolute; top: 40px; left: 100px; width: 750px;\n    z-index: 9999; display: flex; flex-direction: column;\n    background: #e0e5ec; border-radius: 28px;\n    box-shadow: 12px 12px 24px #b8b9be, -12px -12px 24px #ffffff;\n    overflow: hidden; font-family: sans-serif; user-select: none;\n`;\n\nconst header = document.createElement('div');\nheader.style.cssText = `padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; cursor: grab;`;\nheader.innerHTML = `\n    <span style=\"font-weight:900; color:#475569; letter-spacing:1px;\">🃏 ${ctx.fields.titulo || 'SOLITARIO'}</span>\n    <button id=\"close-${winId}\" style=\"border:none; background:transparent; cursor:pointer; font-size:1.5rem; color:#888;\">×</button>\n`;\n\nconst body = document.createElement('div');\nbody.style.cssText = `padding: 20px; display: flex; flex-direction: column; gap: 20px;`;\n\n// --- LÓGICA DE MOVIMIENTO (K) ---\nconst initGame = () => {\n    deck = [];\n    suits.forEach(s => ranks.forEach(r => deck.push({ suit: s, rank: r, color: colors[s], faceUp: false })));\n    deck.sort(() => Math.random() - 0.5);\n    \n    tableau = [[],[],[],[],[],[],[]];\n    for (let i = 0; i < 7; i++) {\n        for (let j = i; j < 7; j++) {\n            const card = deck.pop();\n            if (i === j) card.faceUp = true;\n            tableau[j].push(card);\n        }\n    }\n    stock = deck; waste = []; foundations = [[],[],[],[]];\n    render();\n};\n\nconst isValidMove = (card, targetCard, isEmpty) => {\n    if (isEmpty) return card.rank === 'K';\n    if (!targetCard.faceUp) return false;\n    const rIdx = ranks.indexOf(card.rank);\n    const trIdx = ranks.indexOf(targetCard.rank);\n    return card.color !== targetCard.color && rIdx === trIdx - 1;\n};\n\nconst isValidFoundation = (card, targetCard) => {\n    if (!targetCard) return card.rank === 'A';\n    return card.suit === targetCard.suit && ranks.indexOf(card.rank) === ranks.indexOf(targetCard.rank) + 1;\n};\n\nconst executeMove = (from, to) => {\n    let cards = [];\n    if (from.type === 'waste') cards = [waste.pop()];\n    else if (from.type === 'tableau') cards = tableau[from.pIdx].splice(from.cIdx);\n\n    if (to.type === 'tableau') tableau[to.pIdx].push(...cards);\n    else if (to.type === 'foundation') foundations[to.fIdx].push(...cards);\n\n    // Voltear última carta\n    if (from.type === 'tableau' && tableau[from.pIdx].length > 0) {\n        tableau[from.pIdx][tableau[from.pIdx].length - 1].faceUp = true;\n    }\n    render();\n};\n\n// --- RENDERIZADO Y DRAG & DROP ---\nconst renderCard = (card, sourceInfo) => {\n    const el = document.createElement('div');\n    el.style.cssText = `\n        width: 80px; height: 110px; border-radius: 10px; display: flex; flex-direction: column;\n        align-items: center; justify-content: center; font-weight: bold; font-size: 1.3rem;\n        transition: transform 0.1s; position: relative;\n        ${card && card.faceUp ? 'background: #fff; color:'+card.color : 'background: linear-gradient(135deg, #475569, #1e293b)'};\n        box-shadow: 3px 3px 6px #b8b9be, -1px -1px 3px #ffffff;\n    `;\n\n    if (card && card.faceUp) {\n        el.draggable = true;\n        el.innerHTML = `<div>${card.rank}</div><div style=\"font-size:1.8rem\">${card.suit}</div>`;\n        el.ondragstart = (e) => {\n            selected = sourceInfo;\n            e.dataTransfer.setData('text/plain', ''); // Requerido por FF\n            el.style.opacity = '0.5';\n        };\n        el.ondragend = () => el.style.opacity = '1';\n        el.onclick = () => selected = sourceInfo;\n    } else if (!card) {\n        el.style.background = 'rgba(0,0,0,0.05)';\n        el.style.boxShadow = 'inset 3px 3px 6px #b8b9be';\n    }\n    return el;\n};\n\nconst render = () => {\n    body.innerHTML = '';\n    const top = document.createElement('div');\n    top.style.cssText = `display: flex; justify-content: space-between;`;\n\n    // Stock & Waste\n    const left = document.createElement('div');\n    left.style.cssText = `display: flex; gap: 15px;`;\n    \n    const stockEl = renderCard(stock.length > 0 ? {faceUp:false} : null);\n    stockEl.onclick = () => {\n        if (stock.length > 0) { const c = stock.pop(); c.faceUp = true; waste.push(c); }\n        else { stock = waste.reverse().map(c => ({...c, faceUp: false})); waste = []; }\n        render();\n    };\n    \n    const wasteEl = renderCard(waste[waste.length-1] || null, {type: 'waste'});\n    left.append(stockEl, wasteEl);\n\n    // Foundations\n    const right = document.createElement('div');\n    right.style.cssText = `display: flex; gap: 15px;`;\n    foundations.forEach((f, i) => {\n        const fEl = renderCard(f[f.length-1] || null);\n        fEl.ondragover = (e) => e.preventDefault();\n        fEl.ondrop = () => {\n            if (selected && isValidFoundation(selected.type === 'waste' ? waste[waste.length-1] : tableau[selected.pIdx][selected.cIdx], f[f.length-1]))\n                executeMove(selected, {type: 'foundation', fIdx: i});\n        };\n        right.append(fEl);\n    });\n    top.append(left, right);\n\n    // Tableau\n    const bottom = document.createElement('div');\n    bottom.style.cssText = `display: flex; justify-content: space-between; margin-top: 30px; height: 450px;`;\n    tableau.forEach((pile, pIdx) => {\n        const pileCont = document.createElement('div');\n        pileCont.style.cssText = `position: relative; width: 80px;`;\n        \n        // Zona de soltado para pilas vacías\n        pileCont.ondragover = (e) => e.preventDefault();\n        pileCont.ondrop = () => {\n            const movingCard = selected.type === 'waste' ? waste[waste.length-1] : tableau[selected.pIdx][selected.cIdx];\n            if (selected && isValidMove(movingCard, pile[pile.length-1], pile.length === 0))\n                executeMove(selected, {type: 'tableau', pIdx});\n        };\n\n        if (pile.length === 0) pileCont.append(renderCard(null));\n        else {\n            pile.forEach((card, cIdx) => {\n                const cEl = renderCard(card, {type: 'tableau', pIdx, cIdx});\n                cEl.style.position = 'absolute';\n                cEl.style.top = `${cIdx * 25}px`;\n                pileCont.append(cEl);\n            });\n        }\n        bottom.append(pileCont);\n    });\n\n    body.append(top, bottom);\n};\n\nconst btnReset = document.createElement('button');\nbtnReset.innerText = \"REINICIAR (K)\";\nbtnReset.style.cssText = `width:100%; padding:10px; border:none; border-radius:12px; background:#e0e5ec; box-shadow: 4px 4px 8px #b8b9be, -4px -4px 8px #ffffff; cursor:pointer; font-weight:800; color:#475569;`;\nbtnReset.onclick = initGame;\n\nbody.append(btnReset);\nwin.append(header, body);\ndocument.body.appendChild(win);\n\n// ARRASTRE VENTANA\nlet dragging = false, offset = {x:0, y:0};\nheader.onmousedown = (e) => {\n    dragging = true; offset.x = e.clientX - win.offsetLeft; offset.y = e.clientY - win.offsetTop;\n};\nwindow.addEventListener('mousemove', (e) => {\n    if (dragging) { win.style.left = (e.clientX - offset.x)+'px'; win.style.top = (e.clientY - offset.y)+'px'; }\n});\nwindow.addEventListener('mouseup', () => dragging = false);\ndocument.getElementById(`close-${winId}`).onclick = () => win.remove();\n\ninitGame();\nreturn \"Solitario Klondike V2 (Z-H-F) Listo\";\n"
+      }
+    ]
+  },
+  "x": 0,
+  "y": 0,
+  "icon": "hand",
+  "color": "text-indigo-600"
+}
