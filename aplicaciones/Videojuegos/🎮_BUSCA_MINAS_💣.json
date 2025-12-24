@@ -1,0 +1,78 @@
+{
+  "id": "program-buscaminas-pro-silen",
+  "type": "executable",
+  "title": "🎮 BUSCA MINAS 💣",
+  "parentId": "folder-1766530794088863",
+  "content": {
+    "nodes": [
+      {
+        "id": "node-start-mines",
+        "type": "start",
+        "x": 50,
+        "y": 50,
+        "inputs": [],
+        "outputs": [
+          "out"
+        ],
+        "values": {},
+        "uiFlags": {}
+      },
+      {
+        "id": "node-mines-engine",
+        "type": "mines-pro-module",
+        "x": 300,
+        "y": 50,
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "score_final"
+        ],
+        "values": {
+          "dificultad": "Normal"
+        },
+        "uiFlags": {
+          "dificultad": true
+        }
+      }
+    ],
+    "connections": [
+      {
+        "fromNode": "node-start-mines",
+        "fromPort": "out",
+        "toNode": "node-mines-engine",
+        "toPort": "open"
+      }
+    ],
+    "embeddedModules": [
+      {
+        "id": "mines-pro-module",
+        "title": "Buscaminas (Z-H-N)",
+        "color": "#475569",
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "score_final"
+        ],
+        "fields": [
+          {
+            "name": "dificultad",
+            "type": "select",
+            "options": [
+              "Fácil",
+              "Normal",
+              "Difícil"
+            ],
+            "value": "Normal"
+          }
+        ],
+        "code": "\nconst winId = 'mines-pro-window';\nconst existing = document.getElementById(winId);\nif (existing) { existing.remove(); return; }\n\n// --- ESTADO Y VARIABLES (N-Z) ---\nconst config = {\n    'Fácil': { size: 8, mines: 10, mult: 1 },\n    'Normal': { size: 10, mines: 15, mult: 2 },\n    'Difícil': { size: 12, mines: 25, mult: 5 }\n};\nconst diff = ctx.fields.dificultad || 'Normal';\nconst { size, mines, mult } = config[diff];\n\nlet board = [];\nlet revealed = new Set();\nlet flags = new Set();\nlet gameOver = false;\nlet score = 0;\nlet seconds = 0;\nlet timerInterval = null;\nlet firstClick = true;\n\n// --- INTERFAZ (F-D) ---\nconst win = document.createElement('div');\nwin.id = winId;\nwin.style.cssText = `\n    position: absolute; top: 80px; left: 220px; \n    z-index: 9999; display: flex; flex-direction: column;\n    background: #e0e5ec; border-radius: 28px;\n    box-shadow: 15px 15px 30px #b8b9be, -15px -15px 30px #ffffff;\n    overflow: hidden; font-family: sans-serif; user-select: none;\n`;\n\nconst header = document.createElement('div');\nheader.style.cssText = `\n    padding: 15px; display: flex; justify-content: space-between;\n    align-items: center; cursor: grab; background: #e0e5ec;\n    border-bottom: 1px solid rgba(0,0,0,0.05);\n`;\nheader.innerHTML = `\n    <div style=\"display:flex; align-items:center; gap:8px;\">\n        <span style=\"font-weight:900; color:#475569; font-size:0.7rem; letter-spacing:1px;\">💣 BUSCAMINAS</span>\n        \n    </div>\n    <button id=\"close-${winId}\" style=\"border:none; background:transparent; cursor:pointer; font-size:1.2rem; color:#888;\">×</button>\n`;\n\nconst body = document.createElement('div');\nbody.style.cssText = `padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 12px;`;\n\n// MARCADOR DE PUNTUACIÓN (N)\nconst statsBar = document.createElement('div');\nstatsBar.style.cssText = `\n    width: 100%; display: flex; justify-content: space-between; \n    background: rgba(0,0,0,0.03); padding: 8px 15px; border-radius: 12px;\n`;\nstatsBar.innerHTML = `\n    <div style=\"display:flex; flex-direction:column;\">\n        <span style=\"font-size:0.5rem; color:#718096; font-weight:bold;\">PUNTUACIÓN</span>\n        <span id=\"score-${winId}\" style=\"font-weight:900; color:#475569;\">0</span>\n    </div>\n    <div style=\"display:flex; flex-direction:column; align-items:flex-end;\">\n        <span style=\"font-size:0.5rem; color:#718096; font-weight:bold;\">MINAS / 🚩</span>\n        <span id=\"flags-${winId}\" style=\"font-weight:900; color:#ef4444;\">${mines}</span>\n    </div>\n`;\n\nconst gridEl = document.createElement('div');\ngridEl.style.cssText = `\n    display: grid; grid-template-columns: repeat(${size}, 32px);\n    gap: 4px; padding: 10px; background: #e0e5ec; border-radius: 12px;\n    box-shadow: inset 4px 4px 8px #b8b9be, inset -4px -4px 8px #ffffff;\n`;\n\n// --- LÓGICA DE JUEGO (Z-K-H) ---\n\nconst initBoard = () => {\n    board = Array(size).fill().map(() => Array(size).fill(0));\n    let placed = 0;\n    while (placed < mines) {\n        const r = Math.floor(Math.random() * size), c = Math.floor(Math.random() * size);\n        if (board[r][c] !== 'M') { board[r][c] = 'M'; placed++; }\n    }\n    for (let r = 0; r < size; r++) {\n        for (let c = 0; c < size; c++) {\n            if (board[r][c] === 'M') continue;\n            let n = 0;\n            for (let i = -1; i <= 1; i++) {\n                for (let j = -1; j <= 1; j++) {\n                    if (r+i >= 0 && r+i < size && c+j >= 0 && c+j < size && board[r+i][c+j] === 'M') n++;\n                }\n            }\n            board[r][c] = n;\n        }\n    }\n};\n\nconst startTimer = () => {\n    if (timerInterval) return;\n    timerInterval = setInterval(() => {\n        seconds++;\n        const el = document.getElementById(`timer-${winId}`);\n        if (el) el.innerText = String(seconds).padStart(3, '0');\n    }, 1000);\n};\n\nconst updateStats = () => {\n    document.getElementById(`score-${winId}`).innerText = score;\n    document.getElementById(`flags-${winId}`).innerText = mines - flags.size;\n};\n\nconst drawBoard = () => {\n    gridEl.innerHTML = '';\n    for (let r = 0; r < size; r++) {\n        for (let c = 0; c < size; c++) {\n            const key = `${r},${c}`;\n            const cell = document.createElement('div');\n            cell.style.cssText = `width:32px; height:32px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:900; cursor:pointer; transition:0.2s;`;\n            \n            if (revealed.has(key)) {\n                cell.style.boxShadow = 'inset 2px 2px 5px #b8b9be, inset -2px -2px 5px #ffffff';\n                if (board[r][c] === 'M') {\n                    cell.innerText = '💣'; cell.style.background = '#ef4444';\n                } else if (board[r][c] > 0) {\n                    cell.innerText = board[r][c];\n                    const colors = ['', '#3b82f6', '#10b981', '#ef4444', '#6366f1', '#b91c1c', '#0d9488', '#111827'];\n                    cell.style.color = colors[board[r][c]];\n                }\n            } else {\n                cell.style.boxShadow = '4px 4px 8px #b8b9be, -4px -4px 8px #ffffff';\n                if (flags.has(key)) cell.innerText = '🚩';\n            }\n            cell.onclick = () => reveal(r, c);\n            cell.oncontextmenu = (e) => { e.preventDefault(); toggleFlag(r, c); };\n            gridEl.appendChild(cell);\n        }\n    }\n};\n\nconst reveal = (r, c) => {\n    if (gameOver || flags.has(`${r},${c}`)) return;\n    if (firstClick) { startTimer(); firstClick = false; }\n    \n    const key = `${r},${c}`;\n    if (revealed.has(key)) return;\n\n    revealed.add(key);\n    score += (10 * mult);\n\n    if (board[r][c] === 'M') {\n        endGame(false);\n    } else if (board[r][c] === 0) {\n        for (let i = -1; i <= 1; i++) {\n            for (let j = -1; j <= 1; j++) {\n                if (r+i >= 0 && r+i < size && c+j >= 0 && c+j < size) reveal(r+i, c+j);\n            }\n        }\n    }\n    updateStats();\n    checkWin();\n    drawBoard();\n};\n\nconst toggleFlag = (r, c) => {\n    if (gameOver || revealed.has(`${r},${c}`)) return;\n    const key = `${r},${c}`;\n    if (flags.has(key)) flags.delete(key); else flags.add(key);\n    updateStats();\n    drawBoard();\n};\n\nconst checkWin = () => {\n    if (revealed.size === (size * size) - mines && !gameOver) endGame(true);\n};\n\nconst endGame = (win) => {\n    gameOver = true;\n    clearInterval(timerInterval);\n    if (win) {\n        const bonus = Math.max(0, 1000 - seconds) * mult;\n        score += bonus;\n        ctx.log(`🏆 VICTORIA: Score Final ${score}`);\n        alert(`¡Victoria! Coherencia (H) restaurada.\\nBonus Tiempo: ${bonus}`);\n    } else {\n        ctx.log(\"💥 EXPLOSIÓN: Sistema de archivos comprometido.\");\n        revealAll();\n    }\n    updateStats();\n};\n\nconst revealAll = () => {\n    for (let r = 0; r < size; r++) {\n        for (let c = 0; c < size; c++) revealed.add(`${r},${c}`);\n    }\n};\n\nconst btnReset = document.createElement('button');\nbtnReset.innerText = \"REINICIAR TABLERO\";\nbtnReset.style.cssText = `width:100%; padding:12px; border:none; border-radius:15px; background:#e0e5ec; color:#475569; font-weight:900; cursor:pointer; box-shadow:6px 6px 12px #b8b9be, -4px -4px 8px #ffffff; font-size:0.65rem; transition:0.2s;`;\nbtnReset.onclick = () => { \n    revealed.clear(); flags.clear(); gameOver = false; score = 0; seconds = 0; firstClick = true;\n    clearInterval(timerInterval); timerInterval = null;\n    const timerEl = document.getElementById(`timer-${winId}`); if(timerEl) timerEl.innerText = '000';\n    initBoard(); updateStats(); drawBoard(); \n};\n\nbody.append(statsBar, gridEl, btnReset);\nwin.append(header, body);\ndocument.body.appendChild(win);\n\n// ARRASTRE (Simple)\nlet dragging = false, offset = {x:0, y:0};\nheader.onmousedown = (e) => { dragging = true; offset.x = e.clientX - win.offsetLeft; offset.y = e.clientY - win.offsetTop; win.style.zIndex = 10000; };\nwindow.addEventListener('mousemove', (e) => { if (!dragging) return; win.style.left = (e.clientX - offset.x) + 'px'; win.style.top = (e.clientY - offset.y) + 'px'; });\nwindow.addEventListener('mouseup', () => dragging = false);\ndocument.getElementById(`close-${winId}`).onclick = () => { clearInterval(timerInterval); win.remove(); };\n\ninitBoard(); drawBoard();\nreturn \"Buscaminas Pro con Puntuación y Tiempo\";"
+      }
+    ]
+  },
+  "x": 0,
+  "y": 0,
+  "icon": "bomb",
+  "color": "text-rose-600"
+}
