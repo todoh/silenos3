@@ -1,0 +1,55 @@
+{
+  "id": "program-github-repo-v3",
+  "type": "executable",
+  "title": "Aplicaciones de SILENOS",
+  "parentId": "desktop",
+  "content": {
+    "nodes": [
+      {
+        "id": "node-start",
+        "type": "start",
+        "x": 50,
+        "y": 50,
+        "inputs": [],
+        "outputs": [
+          "out"
+        ]
+      },
+      {
+        "id": "node-store-v3",
+        "type": "github-store-v3",
+        "x": 300,
+        "y": 50,
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "done"
+        ],
+        "values": {
+          "base_url": "https://api.github.com/repos/todoh/silenos3/contents/aplicaciones"
+        }
+      }
+    ],
+    "connections": [
+      {
+        "fromNode": "node-start",
+        "fromPort": "out",
+        "toNode": "node-store-v3",
+        "toPort": "open"
+      }
+    ],
+    "embeddedModules": [
+      {
+        "id": "github-store-v3",
+        "title": "GitHub Store Fixed",
+        "color": "#1e293b",
+        "code": "const winId = 'github-store-v3-window';\nconst existing = document.getElementById(winId);\nif (existing) { existing.remove(); return; }\n\n// --- INYECCIÓN DE ESTILOS PARA SCROLLBAR ---\nconst styleId = 'github-store-styles';\nif (!document.getElementById(styleId)) {\n    const style = document.createElement('style');\n    style.id = styleId;\n    style.innerHTML = `\n        .silen-scroll::-webkit-scrollbar { width: 6px; }\n        .silen-scroll::-webkit-scrollbar-track { background: transparent; }\n        .silen-scroll::-webkit-scrollbar-thumb { background: #b8b9be; border-radius: 10px; }\n        .silen-scroll::-webkit-scrollbar-thumb:hover { background: #a3a4a9; }\n    `;\n    document.head.appendChild(style);\n}\n\n// --- UI: CONTENEDOR (D) ---\nconst win = document.createElement('div');\nwin.id = winId;\nwin.className = 'window neumorph-out pop-in pointer-events-auto';\nwin.style.cssText = `position:absolute; top:40px; left:50px; width:1100px; height:720px; z-index:9999; display:flex; flex-direction:column; background:#e0e5ec; border-radius:35px; box-shadow:25px 25px 50px #b8b9be; overflow:hidden; font-family:sans-serif;`;\n\nconst header = document.createElement('div');\nheader.style.cssText = `padding:20px 30px; display:flex; justify-content:space-between; align-items:center; cursor:grab; background:#1e293b; color:white; flex-shrink:0;`;\nheader.innerHTML = `<div style=\"display:flex; align-items:center; gap:12px;\"><i data-lucide=\"layout-grid\"></i><span style=\"font-weight:900; font-size:0.8rem; letter-spacing:2px;\">Aplicaciones de SILENOS</span></div><button id=\"close-${winId}\" style=\"border:none; background:transparent; cursor:pointer; font-size:1.8rem; color:white;\">×</button>`;\n\nconst mainArea = document.createElement('div');\nmainArea.style.cssText = `padding:25px; flex:1; display:grid; grid-template-columns: repeat(4, 1fr); gap:20px; overflow:hidden; background:#e0e5ec;`;\n\n// --- GENERADOR DE COLUMNAS (G) ---\nconst createColumn = (title, folderName, icon, accentColor) => {\n    const col = document.createElement('div');\n    col.style.cssText = `display:flex; flex-direction:column; gap:15px; height:100%; min-height:0;`;\n    \n    const colHeader = document.createElement('div');\n    colHeader.style.cssText = `padding:10px; font-weight:900; font-size:0.7rem; color:${accentColor}; text-transform:uppercase; letter-spacing:1px; border-bottom:2px solid ${accentColor}; display:flex; align-items:center; gap:8px; flex-shrink:0;`;\n    colHeader.innerHTML = `<i data-lucide=\"${icon}\" style=\"width:16px\"></i> ${title}`;\n\n    const listContainer = document.createElement('div');\n    listContainer.className = 'neumorph-in silen-scroll';\n    listContainer.style.cssText = `flex:1; border-radius:20px; padding:15px; overflow-y:auto; display:flex; flex-direction:column; gap:15px; background:rgba(0,0,0,0.02); min-height:0;`;\n\n    col.append(colHeader, listContainer);\n    mainArea.appendChild(col);\n\n    fetchData(folderName, listContainer, accentColor);\n};\n\nasync function fetchData(folder, container, color) {\n    container.innerHTML = `<div style=\"font-size:0.6rem; color:#aaa; text-align:center; margin-top:20px;\">Sincronizando...</div>`;\n    try {\n        const apiURL = `${ctx.fields.base_url}/${folder}`;\n        const response = await fetch(apiURL);\n        const files = await response.json();\n\n        if (!Array.isArray(files)) {\n            container.innerHTML = `<div style=\"font-size:0.6rem; color:#ef4444; text-align:center;\">Carpeta vacía</div>`;\n            return;\n        }\n\n        container.innerHTML = \"\";\n        files.forEach(file => {\n            if (!file.name.endsWith('.json')) return;\n            \n            const item = document.createElement('div');\n            item.className = 'neumorph-btn';\n            item.style.cssText = `padding:15px; border-radius:20px; background:#e0e5ec; display:flex; flex-direction:column; gap:10px; flex-shrink:0;`;\n            \n            const name = file.name.replace('.json', '').replace(/_/g, ' ');\n            item.innerHTML = `\n                <div style=\"font-weight:bold; font-size:0.7rem; color:#1e293b; line-height:1.2;\">${name}</div>\n                <button class=\"dl-btn\" style=\"width:100%; padding:8px; border-radius:12px; border:none; background:${color}; color:white; font-size:0.65rem; font-weight:900; cursor:pointer; transition:0.2s;\">INSTALAR (A)</button>\n            `;\n\n            const btn = item.querySelector('.dl-btn');\n            btn.onclick = async () => {\n                btn.innerText = \"BAJANDO...\";\n                try {\n                    const raw = await fetch(file.download_url);\n                    const appData = await raw.json();\n                    if (typeof FileSystem !== 'undefined') {\n                        const newProg = FileSystem.createProgram(appData.title || name, 'desktop');\n                        newProg.type = appData.type || \"executable\";\n                        newProg.icon = appData.icon || \"package\";\n                        newProg.color = appData.color || \"text-slate-600\";\n                        newProg.content = appData.content || appData;\n                        FileSystem.save();\n                        if (typeof refreshSystemViews === 'function') refreshSystemViews();\n                        btn.innerText = \"✅ LISTO\";\n                        btn.style.background = \"#22c55e\";\n                    }\n                } catch (e) { btn.innerText = \"❌ ERROR\"; }\n            };\n            container.appendChild(item);\n        });\n        if (window.lucide) lucide.createIcons();\n    } catch (err) {\n        container.innerHTML = `<div style=\"font-size:0.6rem; color:#ef4444; text-align:center;\">Error de Conexión</div>`;\n    }\n}\n\n// --- INICIALIZACIÓN ---\ncreateColumn(\"Inteligencia Artificial\", \"Inteligencia-Artificial\", \"brain-circuit\", \"#6366f1\");\ncreateColumn(\"Utilidades\", \"Utilidades\", \"wrench\", \"#f59e0b\");\ncreateColumn(\"Videojuegos\", \"Videojuegos\", \"gamepad-2\", \"#ec4899\");\ncreateColumn(\"Artes\", \"Artes\", \"palette\", \"#8b5cf6\");\n\nwin.append(header, mainArea);\ndocument.body.appendChild(win);\nif (window.lucide) lucide.createIcons();\n\n// Drag & Close\nlet d=false, o={x:0,y:0};\nheader.onmousedown=(e)=>{ if(e.target.id.includes('close'))return; d=true; o.x=e.clientX-win.offsetLeft; o.y=e.clientY-win.offsetTop; };\nwindow.addEventListener('mousemove',(e)=>{ if(!d)return; win.style.left=(e.clientX-o.x)+'px'; win.style.top=(e.clientY-o.y)+'px'; });\nwindow.addEventListener('mouseup',()=>{ d=false; });\ndocument.getElementById(`close-${winId}`).onclick = () => win.remove();"
+      }
+    ]
+  },
+  "x": 1768,
+  "y": 37,
+  "icon": "store",
+  "color": "text-black-500"
+}

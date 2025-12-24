@@ -1,0 +1,76 @@
+{
+  "id": "program-calc-silen-v1",
+  "type": "executable",
+  "title": "🧮 CALCULADORA SILEN",
+  "parentId": "folder-1766530794088863",
+  "content": {
+    "nodes": [
+      {
+        "id": "node-start-calc",
+        "type": "start",
+        "x": 50,
+        "y": 50,
+        "inputs": [],
+        "outputs": [
+          "out"
+        ],
+        "values": {},
+        "uiFlags": {}
+      },
+      {
+        "id": "node-calc-ui",
+        "type": "custom-calculator-silen",
+        "x": 350,
+        "y": 80,
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "done"
+        ],
+        "values": {
+          "titulo": "Calculadora"
+        },
+        "uiFlags": {
+          "titulo": false
+        }
+      }
+    ],
+    "connections": [
+      {
+        "fromNode": "node-start-calc",
+        "fromPort": "out",
+        "toNode": "node-calc-ui",
+        "toPort": "open"
+      }
+    ],
+    "panX": 0,
+    "panY": 0,
+    "scale": 1,
+    "embeddedModules": [
+      {
+        "id": "custom-calculator-silen",
+        "title": "Calculadora Dual (Z-N-F)",
+        "color": "#475569",
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "done"
+        ],
+        "fields": [
+          {
+            "name": "titulo",
+            "type": "text",
+            "value": "Calculadora Silenos"
+          }
+        ],
+        "code": "\nconst winId = 'silen-calc-window';\nconst existing = document.getElementById(winId);\nif (existing) { existing.remove(); return; }\n\n// --- VARIABLES DE ESTADO (Z-N) ---\nlet displayValue = '0';\nlet currentMode = 'simple'; // 'simple' o 'scientific'\n\nconst calculate = () => {\n    try {\n        let expression = displayValue\n            .replace(/sin/g, 'Math.sin')\n            .replace(/cos/g, 'Math.cos')\n            .replace(/tan/g, 'Math.tan')\n            .replace(/log/g, 'Math.log10')\n            .replace(/ln/g, 'Math.log')\n            .replace(/√/g, 'Math.sqrt')\n            .replace(/\\^/g, '**')\n            .replace(/π/g, 'Math.PI')\n            .replace(/e/g, 'Math.E');\n            \n        // eslint-disable-next-line no-eval\n        const result = eval(expression);\n        displayValue = Number.isFinite(result) ? \n            (Number.isInteger(result) ? result.toString() : result.toFixed(8).replace(/\\.?0+$/, \"\")) : \n            \"Error\";\n    } catch (e) {\n        displayValue = \"Error\";\n    }\n};\n\n// --- INTERFAZ (F-D) ---\nconst win = document.createElement('div');\nwin.id = winId;\nwin.style.cssText = `\n    position: absolute; top: 100px; left: 300px; width: 320px;\n    z-index: 9999; display: flex; flex-direction: column;\n    background: #e0e5ec; border-radius: 28px;\n    box-shadow: 12px 12px 24px #b8b9be, -12px -12px 24px #ffffff;\n    overflow: hidden; font-family: sans-serif; transition: width 0.3s ease;\n`;\n\nconst header = document.createElement('div');\nheader.style.cssText = `\n    padding: 15px; display: flex; justify-content: space-between;\n    align-items: center; cursor: grab; background: #e0e5ec;\n    border-bottom: 1px solid rgba(0,0,0,0.05);\n`;\nheader.innerHTML = `\n    <span style=\"font-weight:900; color:#475569; font-size:0.75rem; letter-spacing:1px;\">🧮 ${ctx.fields.titulo || 'CALCULADORA Z-N'}</span>\n    <button id=\"close-${winId}\" style=\"border:none; background:transparent; cursor:pointer; font-size:1.2rem; color:#888;\">×</button>\n`;\n\nconst body = document.createElement('div');\nbody.style.cssText = `padding: 20px; display: flex; flex-direction: column; gap: 15px;`;\n\n// PANTALLA\nconst screen = document.createElement('div');\nscreen.style.cssText = `\n    width: 100%; height: 65px; background: #e0e5ec;\n    box-shadow: inset 6px 6px 12px #b8b9be, inset -6px -6px 12px #ffffff;\n    border-radius: 15px; display: flex; align-items: center;\n    justify-content: flex-end; padding: 0 20px; box-sizing: border-box;\n    font-size: 1.6rem; color: #475569; font-weight: bold; overflow: hidden;\n    text-shadow: 1px 1px 0px rgba(255,255,255,0.5);\n`;\nscreen.innerText = displayValue;\n\n// SELECTOR DE MODO\nconst modeSelector = document.createElement('div');\nmodeSelector.style.cssText = `display: flex; background: rgba(0,0,0,0.03); padding: 4px; border-radius: 12px;`;\n\nconst createModeBtn = (label, mode) => {\n    const btn = document.createElement('button');\n    btn.innerText = label;\n    const isActive = currentMode === mode;\n    btn.style.cssText = `flex: 1; border: none; padding: 8px; border-radius: 10px; font-size: 0.65rem; font-weight: bold; cursor: pointer; transition: 0.3s; background: ${isActive ? '#475569' : 'transparent'}; color: ${isActive ? '#fff' : '#718096'};`;\n    btn.onclick = () => {\n        currentMode = mode;\n        win.style.width = mode === 'scientific' ? '480px' : '320px';\n        Array.from(modeSelector.children).forEach(b => {\n            b.style.background = 'transparent'; b.style.color = '#718096';\n        });\n        btn.style.background = '#475569'; btn.style.color = '#fff';\n        drawGrid();\n    };\n    return btn;\n};\n\nconst btnSimple = createModeBtn('SIMPLE', 'simple');\nconst btnSci = createModeBtn('CIENTÍFICA', 'scientific');\nmodeSelector.append(btnSimple, btnSci);\n\nconst grid = document.createElement('div');\ngrid.style.cssText = `display: grid; gap: 12px;`;\n\nconst drawGrid = () => {\n    grid.innerHTML = '';\n    const isSci = currentMode === 'scientific';\n    grid.style.gridTemplateColumns = isSci ? 'repeat(5, 1fr)' : 'repeat(4, 1fr)';\n\n    const buttons = isSci \n        ? ['sin', 'cos', 'tan', '(', ')', 'log', 'ln', '√', '^', 'π', '7', '8', '9', '/', 'C', '4', '5', '6', '*', 'e', '1', '2', '3', '-', '=', '0', '.', '%', '+', 'Del']\n        : ['7', '8', '9', '/', '4', '5', '6', '*', '1', '2', '3', '-', 'C', '0', '.', '+', '=', 'Del'];\n\n    buttons.forEach(txt => {\n        const b = document.createElement('div');\n        b.innerText = txt;\n        \n        let style = `\n            height: 48px; display: flex; align-items: center; justify-content: center;\n            background: #e0e5ec; border-radius: 12px; cursor: pointer;\n            box-shadow: 5px 5px 10px #b8b9be, -5px -5px 10px #ffffff;\n            font-weight: bold; color: #475569; font-size: 0.9rem; transition: 0.2s;\n        `;\n\n        if (['=', '+', '-', '*', '/', 'Del'].includes(txt)) style += 'color: #3b82f6;';\n        if (txt === 'C') style += 'color: #ef4444;';\n        if (txt === '=') {\n            style += 'background: #475569; color: #fff; grid-column: span 1;';\n        }\n        if (isNaN(txt) && txt.length > 1 && txt !== 'Del') style += 'font-size: 0.7rem;';\n\n        b.style.cssText = style;\n\n        b.onmousedown = () => {\n            b.style.boxShadow = 'inset 3px 3px 6px #b8b9be, inset -3px -3px 6px #ffffff';\n            b.style.transform = 'scale(0.96)';\n        };\n        b.onmouseup = () => {\n            b.style.boxShadow = '5px 5px 10px #b8b9be, -5px -5px 10px #ffffff';\n            b.style.transform = 'scale(1)';\n        };\n\n        b.onclick = () => {\n            if (txt === 'C') displayValue = '0';\n            else if (txt === 'Del') {\n                displayValue = displayValue.length > 1 ? displayValue.slice(0, -1) : '0';\n            }\n            else if (txt === '=') calculate();\n            else {\n                if (displayValue === '0' || displayValue === 'Error') displayValue = txt;\n                else displayValue += txt;\n            }\n            screen.innerText = displayValue;\n        };\n        grid.appendChild(b);\n    });\n};\n\ndrawGrid();\nbody.append(modeSelector, screen, grid);\nwin.append(header, body);\ndocument.body.appendChild(win);\n\n// ARRASTRE\nlet dragging = false, offset = {x:0, y:0};\nheader.onmousedown = (e) => {\n    dragging = true;\n    offset.x = e.clientX - win.offsetLeft;\n    offset.y = e.clientY - win.offsetTop;\n    win.style.zIndex = 10000;\n};\nwindow.addEventListener('mousemove', (e) => {\n    if (!dragging) return;\n    win.style.left = (e.clientX - offset.x) + 'px';\n    win.style.top = (e.clientY - offset.y) + 'px';\n});\nwindow.addEventListener('mouseup', () => dragging = false);\n\ndocument.getElementById(`close-${winId}`).onclick = () => win.remove();\n\nreturn \"Calculadora Z-N Iniciada\";\n"
+      }
+    ]
+  },
+  "x": 0,
+  "y": 0,
+  "icon": "calculator",
+  "color": "text-blue-500"
+}

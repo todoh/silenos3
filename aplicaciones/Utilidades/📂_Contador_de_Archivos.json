@@ -1,0 +1,76 @@
+{
+  "id": "program-recursive-explorer-v2",
+  "type": "executable",
+  "title": "📂 Contador de Archivos",
+  "parentId": "folder-1766530794088863",
+  "content": {
+    "nodes": [
+      {
+        "id": "node-start",
+        "type": "start",
+        "x": 50,
+        "y": 50,
+        "inputs": [],
+        "outputs": [
+          "out"
+        ],
+        "values": {},
+        "uiFlags": {}
+      },
+      {
+        "id": "node-lister",
+        "type": "recursive-lister-v2",
+        "x": 300,
+        "y": 50,
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "done"
+        ],
+        "values": {
+          "titulo": "ANALIZADOR DE MATERIA"
+        },
+        "uiFlags": {
+          "titulo": false
+        }
+      }
+    ],
+    "connections": [
+      {
+        "fromNode": "node-start",
+        "fromPort": "out",
+        "toNode": "node-lister",
+        "toPort": "open"
+      }
+    ],
+    "panX": 0,
+    "panY": 0,
+    "scale": 1,
+    "embeddedModules": [
+      {
+        "id": "recursive-lister-v2",
+        "title": "Explorador Recursivo",
+        "color": "#f59e0b",
+        "inputs": [
+          "open"
+        ],
+        "outputs": [
+          "done"
+        ],
+        "fields": [
+          {
+            "name": "titulo",
+            "type": "text",
+            "value": "Explorador de Archivos"
+          }
+        ],
+        "code": "\nconst winId = 'recursive-lister-v2-win';\nconst existing = document.getElementById(winId);\nif (existing) { existing.remove(); return; }\n\nif (typeof AIWorker !== 'undefined') AIWorker.clearContext();\n\n// --- UI (D) ---\nconst win = document.createElement('div');\nwin.id = winId;\nwin.className = 'window neumorph-out pop-in pointer-events-auto';\nwin.style.cssText = `position:absolute; top:80px; left:150px; width:460px; height:560px; z-index:9999; display:flex; flex-direction:column; background:#e0e5ec; border-radius:28px; box-shadow:15px 15px 30px #b8b9be; overflow:hidden; font-family:sans-serif;`;\n\nconst header = document.createElement('div');\nheader.className = 'window-header';\nheader.style.cssText = `padding:18px 25px; display:flex; justify-content:space-between; align-items:center; cursor:grab; border-bottom:1px solid rgba(0,0,0,0.05);`;\nheader.innerHTML = `<span style=\"font-weight:900; color:#f59e0b; font-size:0.75rem; letter-spacing:1px; text-transform:uppercase;\">📂 ${ctx.fields.titulo}</span><button id=\"close-${winId}\" style=\"border:none; background:transparent; cursor:pointer; font-size:1.4rem; color:#888;\">×</button>`;\n\nconst body = document.createElement('div');\nbody.style.cssText = `padding:25px; flex:1; display:flex; flex-direction:column; gap:18px; overflow:hidden;`;\n\nconst dropZone = document.createElement('div');\ndropZone.className = 'ai-drop-zone neumorph-in';\ndropZone.style.cssText = `height:140px; border:2px dashed #f59e0b; border-radius:22px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; transition:all 0.4s cubic-bezier(0.4, 0, 0.2, 1); background:rgba(245, 158, 11, 0.03);`;\n\nconst btnAction = document.createElement('button');\nbtnAction.className = 'neumorph-btn';\nbtnAction.innerText = \"ESPERANDO MATERIA...\";\nbtnAction.disabled = true;\nbtnAction.style.cssText = `padding:15px; background:#a3b1c6; color:white; border:none; border-radius:16px; font-weight:bold; font-size:0.85rem; cursor:not-allowed; opacity:0.6; transition:all 0.3s;`;\n\nconst results = document.createElement('div');\nresults.className = 'neumorph-in';\nresults.style.cssText = `flex:1; padding:15px; overflow-y:auto; font-size:0.75rem; color:#475569; background:#f0f2f5; border-radius:18px;`;\nresults.innerHTML = `<div style=\"text-align:center; color:#a3b1c6; font-style:italic; margin-top:40px;\">Monitor de granularidad inactivo</div>`;\n\nbody.append(dropZone, btnAction, results);\nwin.append(header, body);\ndocument.body.appendChild(win);\nif (window.lucide) lucide.createIcons();\n\n// --- LÓGICA DE DETECCIÓN Y FEEDBACK (A) ---\nconst checkContext = setInterval(() => {\n    if (!document.getElementById(winId)) { clearInterval(checkContext); return; }\n    \n    if (typeof AIWorker !== 'undefined') {\n        const count = AIWorker.activeContextFiles.size;\n        if (count > 0) {\n            // Estado: Cargado\n            dropZone.style.borderColor = '#22c55e';\n            dropZone.style.background = 'rgba(34, 197, 94, 0.1)';\n            dropZone.innerHTML = `<i data-lucide=\"check-circle\" class=\"w-10 h-10\" style=\"color:#22c55e\"></i><div style=\"text-align:center; font-weight:bold; color:#166534; font-size:0.7rem;\">${count} OBJETO(S) DETECTADO(S)<br><span style=\"color:#22c55e; font-size:0.6rem;\">Materia lista para procesar</span></div>`;\n            \n            btnAction.innerText = \"PROCESAR MATERIA (OK)\";\n            btnAction.disabled = false;\n            btnAction.style.background = '#22c55e';\n            btnAction.style.opacity = '1';\n            btnAction.style.cursor = 'pointer';\n            btnAction.style.boxShadow = '0 0 15px rgba(34, 197, 94, 0.4)';\n        } else {\n            // Estado: Vacío\n            dropZone.style.borderColor = '#f59e0b';\n            dropZone.style.background = 'rgba(245, 158, 11, 0.03)';\n            dropZone.innerHTML = `<i data-lucide=\"folder-up\" class=\"w-10 h-10\" style=\"color:#f59e0b\"></i><div style=\"text-align:center; font-weight:bold; color:#f59e0b; font-size:0.7rem;\">ARRASTRA CARPETAS AQUÍ</div>`;\n            \n            btnAction.innerText = \"ESPERANDO MATERIA...\";\n            btnAction.disabled = true;\n            btnAction.style.background = '#a3b1c6';\n            btnAction.style.opacity = '0.6';\n            btnAction.style.cursor = 'not-allowed';\n            btnAction.style.boxShadow = 'none';\n        }\n        if (window.lucide) lucide.createIcons();\n    }\n}, 500);\n\n// --- ACCIÓN RECURSIVA ---\nbtnAction.onclick = () => {\n    const all = [];\n    const walk = (id) => {\n        const item = FileSystem.getItem(id);\n        if (!item) return;\n        if (item.type === 'folder') {\n            FileSystem.getItems(id).forEach(c => walk(c.id));\n        } else { all.push(item); }\n    };\n    \n    Array.from(AIWorker.activeContextFiles).forEach(id => walk(id));\n    \n    let html = `<div style='border-bottom:2px solid #22c55e; padding-bottom:8px; margin-bottom:12px; font-weight:900;'>GRANULARIDAD: ${all.length} ARCHIVOS</div>`;\n    all.forEach((f, i) => {\n        html += `<div style='padding:6px; background:white; border-radius:8px; margin-bottom:6px; display:flex; gap:8px; font-size:0.65rem; box-shadow:2px 2px 5px rgba(0,0,0,0.03);'>\n            <b style='color:#22c55e'>${i+1}</b> <span>${f.title}</span> <i style='color:#aaa; margin-left:auto;'>${f.type}</i>\n        </div>`;\n    });\n    results.innerHTML = html;\n    ctx.log(\"✅ Procesamiento de materia completado.\");\n};\n\n// Drag ventana\nlet drag=false, off={x:0,y:0};\nheader.onmousedown=(e)=>{ if(e.target.id.includes('close'))return; drag=true; off.x=e.clientX-win.offsetLeft; off.y=e.clientY-win.offsetTop; };\nwindow.addEventListener('mousemove',(e)=>{ if(!drag)return; win.style.left=(e.clientX-off.x)+'px'; win.style.top=(e.clientY-off.y)+'px'; });\nwindow.addEventListener('mouseup',()=>{ drag=false; });\n\ndocument.getElementById(`close-${winId}`).onclick = () => { \n    clearInterval(checkContext); \n    if(typeof AIWorker !== 'undefined') AIWorker.clearContext();\n    win.remove(); \n};\n\nreturn \"Explorador V2 con Feedback de Carga Iniciado\";"
+      }
+    ]
+  },
+  "x": 0,
+  "y": 0,
+  "icon": "zap",
+  "color": "text-yellow-500"
+}
